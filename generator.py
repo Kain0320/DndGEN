@@ -1,4 +1,4 @@
-from base import races, Class, backgrounds, Character, classes
+from base import races, Class, backgrounds, Character, classes,hit_dice, names,set_skills
 import random
 
 def choose_option(options, prompt):
@@ -17,6 +17,7 @@ def choose_option(options, prompt):
     else:
         print("Neplatná volba, vybírám náhodně.")
         return random.choice(list(options.values()))
+    
 def choose_gender():
     options = ["Muž", "Žena"]
     print("Vyber pohlaví:")
@@ -26,6 +27,17 @@ def choose_gender():
     choice = int(input("Zadej číslo: ")) - 1
     return options[choice]
 
+def calculate_hit_points(char_class, constitution_mod):
+    """Vypočítá hit dice a maximální HP postavy."""
+    dice = char_class.hit_dice  # Např. "1d10", "1d8"
+    try:
+        _, dice_value = dice.split("d")  # Oddělíme číslo
+        max_hp = int(dice_value) + constitution_mod  # Převod na int + bonus z Constitution
+    except (ValueError, IndexError):
+        raise ValueError(f"Neplatný formát hit dice: {dice}")
+
+    return dice, max_hp
+
 def generate_character():
     """Vygeneruje postavu podle výběru uživatele nebo náhodně."""
     print("\n=== GENERÁTOR POSTAV D&D 5E ===\n")
@@ -33,19 +45,6 @@ def generate_character():
     race = choose_option(races, "Vyber rasu:")
     char_class = choose_option(classes, "Vyber povolání:")
     background = choose_option(backgrounds, "Vyber zázemí:")
-
-    # Náhodné jméno (jen placeholder, může se vylepšit)
-names = {
-    "Elf": {"Muž": ["Aerendil", "Thalion", "Legolas"], "Žena": ["Arwen", "Lúthien", "Galadriel"]},
-    "Dwarf": {"Muž": ["Thorin", "Balin"], "Žena": ["Dis", "Tana"]},
-    "Human": {"Muž": ["Aragorn", "Boromir"], "Žena": ["Eowyn", "Elanor"]},
-    "Halfling": {"Muž": ["Frodo", "Bilbo"], "Žena": ["Rosie", "Daisy"]},
-    "Kobold": {"Muž": ["Poro", "Koro"], "Žena": ["Saassraa", "Zaassraa"]},
-    "Gith": {"Muž": ["Zerthimon", "Vlaak"], "Žena": ["Vlaakith", "Layzel"]},
-    "Tiefling": {"Muž": ["Morthos", "Kael"], "Žena": ["Lilith", "Morrigan"]},
-    "Dragonborn": {"Muž": ["Bahamut", "Korvax"], "Žena": ["Andarna", "Vey"]},
-    "Gnome": {"Muž": ["Rurik", "Boddynock"], "Žena": ["Bimpnottin", "Breena"]}
-}
 
 def generate_name(race, gender):
     race_name = race.name if hasattr(race, "name") else str(race)  # Oprava chyby s objektem
@@ -64,12 +63,18 @@ def generate_character():
     gender = choose_gender()
     name = generate_name(race, gender)
 
-    character = Character(name, race, char_class, background)
+    character = Character(name, race, char_class, background, )
+    constitution_mod = character.stats.get("Constitution", 0)  # Modifikátor Constitution
+    character.hit_dice, character.hp = calculate_hit_points(char_class, constitution_mod)
 
     print("\n=== VYTVOŘENÁ POSTAVA ===")
     print(character)
+    print(f"HP: {character.hp}")  
+    print(f"Hit Dice: {character.hit_dice}")
     return character
 
+
+#################PDFPRENOS#################
 import PyPDF2
 from reportlab.pdfgen import canvas
 
@@ -86,6 +91,11 @@ def fill_character_sheet(input_pdf, output_pdf, character):
     c.drawString(270, 705, character.race.name)  # Rasa
     c.drawString(270, 730, character.char_class.name)  # Povolání
     c.drawString(385, 730, character.background.name)  # Zázemí
+    c.drawString(290, 585, str(character.hp))  # Hit Dice
+    c.drawString(233, 450, str(character.hit_dice))  # HP
+    skills_text = ", ".join(character.race.skills + character.background.skills)  
+    c.drawString(280, 560, skills_text)
+
     
     # Atributy (pozice upravit podle layoutu PDF)
     y_pos = 620

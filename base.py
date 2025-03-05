@@ -10,6 +10,8 @@ class Character:
         self.stats = self.race.apply_modifiers(self.stats)  # Aplikuje bonusy rasy
         self.inventory = self.generate_inventory()
         self.skills = self.set_skills()
+        self.hit_dice = hit_dice[char_class.name]
+        self.max_hp = random.randint(1, int(self.hit_dice[0]))  
 
     def generate_stats(self):
         """Generuje šest hlavních atributů (hod kostkami 4k6, nejnižší se zahodí)."""
@@ -39,7 +41,7 @@ class Character:
         stats = "\n".join(f"{key}: {value}" for key, value in self.stats.items())
         return f"Name: {self.name}\nRace: {self.race.name}\nClass: {self.char_class.name}\nBackground: {self.background.name}\nStats:\n{stats}"
     class Race:
-        def __init__(self, name, stat_modifiers, skills, traits):
+        def __init__(self, name, stat_modifiers, skills=[], traits=[]):
             self.name = name
             self.stat_modifiers = stat_modifiers  # Bonusy k atributům (např. {"Strength": +2})
             self.skills = skills  # Seznam dovedností získaných díky rase
@@ -48,7 +50,11 @@ class Character:
         def apply_modifiers(self, stats):
             """Aplikuje bonusy k atributům postavy."""
             for stat, bonus in self.stat_modifiers.items():
-                stats[stat] += bonus
+                if stat == "All":
+                    for key in stats.keys():
+                        stats[key] += bonus
+                else:
+                    stats[stat] += bonus
             return stats
 
 races = {
@@ -84,12 +90,12 @@ classes = {
     "Warlock": Class("Warlock", "1d8", ["Arcana", "Deception"], ["Dagger"], ["Eldritch Blast", "Mage Hand"]),
 }
 class Background:
-    def __init__(self, name, skills, starting_equipment, feature):
+    def __init__(self, name, starting_equipment, feature, skills=[], traits=[]):
         self.name = name
         self.skills = skills
         self.starting_equipment = starting_equipment
-        self.feature = feature  # Speciální schopnost zázemí
-    
+        self.feature = feature  # Speciální schopnost zázemí 
+        self.traits = traits  # Speciální vlastnosti zázemí 
 backgrounds = {
     "Noble": Background("Noble", ["History", "Persuasion"], ["Fine Clothes", "Signet Ring"], "Position of Privilege"),
     "Soldier": Background("Soldier", ["Athletics", "Intimidation"], ["Military Gear", "Playing Cards"], "Military Rank"),
@@ -102,4 +108,38 @@ backgrounds = {
     "Hermit": Background("Hermit", ["Medicine", "Religion"], ["Scrolls", "Herbalism Kit"], "Discovery"),
     "Outlander": Background("Outlander", ["Athletics", "Survival"], ["Staff", "Hunting Trap"], "Wanderer"),
 }
-        
+hit_dice = {
+    "Fighter": "1d10",
+    "Wizard": "1d6",
+    "Rogue": "1d8",
+    "Cleric": "1d8",
+    "Bard": "1d8",
+    "Ranger": "1d10",
+    "Barbarian": "1d12",
+    "Sorcerer": "1d6",
+    "Monk": "1d8",
+    "Paladin": "1d10",
+    "Druid": "1d8",
+    "Warlock": "1d8",
+}
+names = {
+    "Elf": {"Muž": ["Aerendil", "Thalion", "Legolas"], "Žena": ["Arwen", "Lúthien", "Galadriel"]},
+    "Dwarf": {"Muž": ["Thorin", "Balin"], "Žena": ["Dis", "Tana"]},
+    "Human": {"Muž": ["Aragorn", "Boromir"], "Žena": ["Eowyn", "Elanor"]},
+    "Halfling": {"Muž": ["Frodo", "Bilbo"], "Žena": ["Rosie", "Daisy"]},
+    "Kabold": {"Muž": ["Poro", "Koro"], "Žena": ["Saassraa", "Zaassraa"]},
+    "Gith": {"Muž": ["Zerthimon", "Vlaak"], "Žena": ["Vlaakith", "Layzel"]},
+    "Tiefling": {"Muž": ["Morthos", "Kael"], "Žena": ["Lilith", "Morrigan"]},
+    "Dragonborn": {"Muž": ["Bahamut", "Korvax"], "Žena": ["Andarna", "Vey"]},
+    "Gnome": {"Muž": ["Rurik", "Boddynock"], "Žena": ["Bimpnottin", "Breena"]}
+}
+def set_skills(self):
+    """Sloučí dovednosti z rasy, povolání a zázemí do jednoho seznamu."""
+    # Ověření, zda skills je seznam, pokud ne, vytvoří seznam z jednotlivých dovedností
+    race_skills = self.race.skills if isinstance(self.race.skills, list) else [self.race.skills]
+    class_skills = self.char_class.skills if isinstance(self.char_class.skills, list) else [self.char_class.skills]
+    background_skills = self.background.skills if isinstance(self.background.skills, list) else [self.background.skills]
+
+    # Spojí všechny dovednosti do jednoho seznamu
+    return race_skills + class_skills + background_skills
+
