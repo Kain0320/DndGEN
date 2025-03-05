@@ -1,4 +1,4 @@
-from base import races, Class, backgrounds, Character, classes,hit_dice, names,set_skills
+from base import races, Class, backgrounds, Character, classes, hit_dice, names
 import random
 
 def choose_option(options, prompt):
@@ -62,15 +62,17 @@ def generate_character():
     background = choose_option(backgrounds, "Vyber zázemí:")
     gender = choose_gender()
     name = generate_name(race, gender)
-
+    
     character = Character(name, race, char_class, background, )
     constitution_mod = character.stats.get("Constitution", 0)  # Modifikátor Constitution
     character.hit_dice, character.hp = calculate_hit_points(char_class, constitution_mod)
+    skills = character.set_skills()
 
     print("\n=== VYTVOŘENÁ POSTAVA ===")
     print(character)
     print(f"HP: {character.hp}")  
     print(f"Hit Dice: {character.hit_dice}")
+    print (f"Skills: {skills}")
     return character
 
 
@@ -93,8 +95,7 @@ def fill_character_sheet(input_pdf, output_pdf, character):
     c.drawString(385, 730, character.background.name)  # Zázemí
     c.drawString(290, 585, str(character.hp))  # Hit Dice
     c.drawString(233, 450, str(character.hit_dice))  # HP
-    skills_text = ", ".join(character.race.skills + character.background.skills)  
-    c.drawString(280, 560, skills_text)
+    
 
     
     # Atributy (pozice upravit podle layoutu PDF)

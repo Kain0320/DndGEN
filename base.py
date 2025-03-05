@@ -1,7 +1,7 @@
 import random
 
 class Character:
-    def __init__(self, name, race, char_class, background):
+    def __init__(self, name, race, char_class, background,skills=None):
         self.name = name
         self.race = race
         self.char_class = char_class
@@ -9,10 +9,16 @@ class Character:
         self.stats = self.generate_stats()
         self.stats = self.race.apply_modifiers(self.stats)  # Aplikuje bonusy rasy
         self.inventory = self.generate_inventory()
-        self.skills = self.set_skills()
         self.hit_dice = hit_dice[char_class.name]
         self.max_hp = random.randint(1, int(self.hit_dice[0]))  
+        self.skills = self.set_skills()
 
+    def set_skills(self):
+        """Spojí dovednosti z rasy, povolání a zázemí do jednoho seznamu."""
+        race_skills = self.race.skills if isinstance(self.race.skills, list) else [self.race.skills]
+        background_skills = self.background.skills if isinstance(self.background.skills, list) else [self.background.skills]
+        return race_skills + background_skills
+    
     def generate_stats(self):
         """Generuje šest hlavních atributů (hod kostkami 4k6, nejnižší se zahodí)."""
         def roll_stat():
@@ -31,10 +37,6 @@ class Character:
     def generate_inventory(self):
         """Přidá základní vybavení podle povolání a zázemí."""
         return self.char_class.starting_equipment + self.background.starting_equipment
-
-    def set_skills(self):
-        """Nastaví dovednosti na základě rasy, povolání a zázemí."""
-        return self.race.skills + self.char_class.skills + self.background.skills
 
     def __str__(self):
         """Vrací statblock postavy jako text."""
@@ -69,10 +71,9 @@ races = {
     "Gnome": Character.Race("Gnome", {"Intelligence": +2}, ["Arcana"], ["Darkvision", "Gnome Cunning"]),
 }
 class Class:
-    def __init__(self, name, hit_dice, skills, starting_equipment, spellcasting=None):
+    def __init__(self, name, hit_dice, starting_equipment, spellcasting=None, skills=[]):
         self.name = name
         self.hit_dice = hit_dice  # Např. "1d10"
-        self.skills = skills  # Seznam dovedností, které povolání dává
         self.starting_equipment = starting_equipment  # Počáteční vybavení
         self.spellcasting = spellcasting  # Seznam kouzel pro castery (může být None)
 classes = {
@@ -133,13 +134,6 @@ names = {
     "Dragonborn": {"Muž": ["Bahamut", "Korvax"], "Žena": ["Andarna", "Vey"]},
     "Gnome": {"Muž": ["Rurik", "Boddynock"], "Žena": ["Bimpnottin", "Breena"]}
 }
-def set_skills(self):
-    """Sloučí dovednosti z rasy, povolání a zázemí do jednoho seznamu."""
-    # Ověření, zda skills je seznam, pokud ne, vytvoří seznam z jednotlivých dovedností
-    race_skills = self.race.skills if isinstance(self.race.skills, list) else [self.race.skills]
-    class_skills = self.char_class.skills if isinstance(self.char_class.skills, list) else [self.char_class.skills]
-    background_skills = self.background.skills if isinstance(self.background.skills, list) else [self.background.skills]
 
-    # Spojí všechny dovednosti do jednoho seznamu
-    return race_skills + class_skills + background_skills
+
 
