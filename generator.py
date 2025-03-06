@@ -1,4 +1,4 @@
-from base import races, Class, backgrounds, Character, classes, hit_dice, names
+from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions
 import random
 
 def choose_option(options, prompt):
@@ -7,9 +7,7 @@ def choose_option(options, prompt):
     for i, option in enumerate(options, 1):
         print(f"{i}. {option}")
     print("0. Random")
-
     choice = input("Vyber možnost (zadej číslo): ")
-    
     if choice == "0":
         return random.choice(list(options.values()))
     elif choice.isdigit() and 1 <= int(choice) <= len(options):
@@ -23,7 +21,6 @@ def choose_gender():
     print("Vyber pohlaví:")
     for i, option in enumerate(options, 1):
         print(f"{i}. {option}")
-    
     choice = int(input("Zadej číslo: ")) - 1
     return options[choice]
 
@@ -35,13 +32,11 @@ def calculate_hit_points(char_class, constitution_mod):
         max_hp = int(dice_value) + constitution_mod  # Převod na int + bonus z Constitution
     except (ValueError, IndexError):
         raise ValueError(f"Neplatný formát hit dice: {dice}")
-
     return dice, max_hp
 
 def generate_character():
     """Vygeneruje postavu podle výběru uživatele nebo náhodně."""
     print("\n=== GENERÁTOR POSTAV D&D 5E ===\n")
-
     race = choose_option(races, "Vyber rasu:")
     char_class = choose_option(classes, "Vyber povolání:")
     background = choose_option(backgrounds, "Vyber zázemí:")
@@ -56,7 +51,6 @@ def generate_name(race, gender):
         print("Nezadáno žádné jméno, generuji náhodné...")
     # Pokud uživatel nezadal jméno nebo nezadal nic
     race_name = race.name if hasattr(race, "name") else str(race)
-    
     if race_name not in names:
         raise ValueError(f"Rasa '{race_name}' není v databázi jmen!")
     if gender not in names[race_name]:
@@ -110,26 +104,6 @@ def fill_character_sheet(input_pdf, output_pdf, character):
     c.drawString(290, 585, str(character.hp))  # Hit Dice
     c.drawString(233, 450, str(character.hit_dice))  # HP
     
-    skill_positions = {
-        "Acrobatics": (102, 462),
-        "Animal Handling": (102, 448),
-        "Arcana": (102, 434),
-        "Athletics": (102, 422),
-        "Deception": (102, 407),
-        "History": (102, 394),
-        "Insight": (102, 380),
-        "Intimidation": (102, 367),
-        "Investigation": (102, 350),
-        "Medicine": (102, 340),
-        "Nature": (102, 322),
-        "Perception": (102, 308),
-        "Performance": (102, 300),
-        "Persuasion": (102, 286),
-        "Religion": (102, 273),
-        "Sleight of Hand": (102, 257),
-        "Stealth": (102, 246),
-        "Survival": (102, 233)
-    }
     for skill in character.skills:
         if skill in skill_positions:
             x, y = skill_positions[skill]
@@ -140,7 +114,6 @@ def fill_character_sheet(input_pdf, output_pdf, character):
     for stat, value in character.stats.items():
         c.drawString(40, y_pos, f"{value}")
         y_pos -= 70
-
     c.save()
 
     # Otevřeme původní PDF a overlay

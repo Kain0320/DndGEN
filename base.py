@@ -84,7 +84,7 @@ class Class:
         self.spellcasting = spellcasting  # Seznam kouzel pro castery (může být None)
 classes = {
     "Fighter": Class("Fighter", "1d10", ["Longsword", "Shield"], None, ["Athletics", "Intimidation"]),
-    "Wizard": Class("Wizard", "1d6", ["Spellbook", "Dagger"], ["Fire Bolt", "Mage Hand"], ["Arcana", "History"]),
+    "Wizard": Class("Wizard", "1d6", ["Dagger", "Spellbook",], ["Fire Bolt", "Mage Hand"], ["Arcana", "History"]),
     "Rogue": Class("Rogue", "1d8", ["Dagger", "Thieves' Tools"], None, ["Stealth", "Deception"]),
     "Cleric": Class("Cleric", "1d8", ["Mace", "Holy Symbol"], ["Cure Wounds", "Sacred Flame"], ["Medicine", "Insight"]),
     "Bard": Class("Bard", "1d8", ["Rapier", "Lute"], ["Vicious Mockery", "Healing Word"], ["Performance", "Persuasion"]),
@@ -139,6 +139,25 @@ names = {
     "Dragonborn": {"Muž": ["Bahamut", "Korvax"], "Žena": ["Andarna", "Vey"]},
     "Gnome": {"Muž": ["Rurik", "Boddynock"], "Žena": ["Bimpnottin", "Breena"]}
 }
-
+skill_positions = {
+        "Acrobatics": (102, 462),
+        "Animal Handling": (102, 448),
+        "Arcana": (102, 434),
+        "Athletics": (102, 422),
+        "Deception": (102, 407),
+        "History": (102, 394),
+        "Insight": (102, 380),
+        "Intimidation": (102, 367),
+        "Investigation": (102, 350),
+        "Medicine": (102, 340),
+        "Nature": (102, 326),
+        "Perception": (102, 308),
+        "Performance": (102, 300),
+        "Persuasion": (102, 286),
+        "Religion": (102, 273),
+        "Sleight of Hand": (102, 257),
+        "Stealth": (102, 246),
+        "Survival": (102, 233)
+    }
 
 
