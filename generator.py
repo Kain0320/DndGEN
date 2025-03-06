@@ -1,5 +1,9 @@
-from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions
+from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class
+
+# Define class_spells using spells_by_class
+class_spells = spells_by_class
 import random
+import textwrap
 
 def choose_option(options, prompt):
     """Umožní uživateli vybrat možnost nebo zvolit náhodnou variantu."""
@@ -34,12 +38,36 @@ def calculate_hit_points(char_class, constitution_mod):
         raise ValueError(f"Neplatný formát hit dice: {dice}")
     return dice, max_hp
 
-def generate_character():
-    """Vygeneruje postavu podle výběru uživatele nebo náhodně."""
-    print("\n=== GENERÁTOR POSTAV D&D 5E ===\n")
-    race = choose_option(races, "Vyber rasu:")
-    char_class = choose_option(classes, "Vyber povolání:")
-    background = choose_option(backgrounds, "Vyber zázemí:")
+def choose_spells(char_class):
+    """Umožní uživateli vybrat kouzla nebo zvolit náhodná."""
+    class_name = char_class.name  # Získání názvu třídy
+    if class_name not in class_spells:
+        print(f"{class_name} nemá žádná kouzla.")
+        return []
+
+    # Get the available spells for the selected class
+    spells = class_spells[class_name]
+    
+    print(f"Vyber kouzla pro třídu {class_name}:")
+    print("1. Vybrat kouzla ručně")
+    print("2. Nechat generátor vybrat náhodně")
+
+    choice = input("Vyber možnost (1 nebo 2): ")
+
+    if choice == "1":
+        print("Seznam dostupných kouzel:")
+        for idx, spell in enumerate(spells, 1):
+            print(f"{idx}. {spell}")
+        
+        selected_spells = []
+        num_spells = int(input("Kolik kouzel chceš vybrat? "))
+        
+        for i in range(num_spells):
+            selected = int(input(f"Vyber kouzlo číslo (1-{len(spells)}): ")) - 1
+            selected_spells.append(spells[selected])
+        
+        return selected_spells
+    
 
 def generate_name(race, gender):
     """Umožní uživateli zadat vlastní jméno nebo vygeneruje náhodné."""
@@ -69,11 +97,12 @@ def generate_character():
     
     skills = []  # Initialize skills
     traits = []  # Initialize traits
-    character = Character(name, race, char_class, background, hit_dice, skills, traits)
+    character = Character(name, race, char_class, background, hit_dice, skills, traits, )
     constitution_mod = character.stats.get("Constitution", 0)  # Modifikátor Constitution
     character.hit_dice, character.hp = calculate_hit_points(char_class, constitution_mod)
     skills = character.set_skills()
     traits = character.set_traits()
+    
 
     print("\n=== VYTVOŘENÁ POSTAVA ===")
     print(character)
@@ -81,12 +110,14 @@ def generate_character():
     print(f"Hit Dice: {character.hit_dice}")
     print (f"Skills: {skills}")
     print (f"Traits: {traits}")
+    print(f"Spells: {choose_spells(char_class)}")
     return character
 
 
 #################PDFPRENOS#################
 import PyPDF2
 from reportlab.pdfgen import canvas
+
 
 def fill_character_sheet(input_pdf, output_pdf, character):
     """Vepíše data do existujícího D&D PDF sheetu."""
@@ -109,7 +140,16 @@ def fill_character_sheet(input_pdf, output_pdf, character):
             x, y = skill_positions[skill]
             c.drawString(x, y, "•")  # Přidáme tečku
 
-    # Atributy 
+    traits_x = 412  # X souřadnice
+    traits_y = 394  # Začátek seznamu vlastností
+    # ✅ Vykreslení traits (vlastností)
+    for trait in character.set_traits():
+        description = trait_descriptions.get(trait, "Neznámá vlastnost.")  
+        wrapped_text = textwrap.wrap(f"• {trait}: {description}", width=30)  # Zalamování textu
+        for line in wrapped_text:
+            c.drawString(traits_x, traits_y, line)
+            traits_y -= 10  # Posun dolů pro další řádek
+
     y_pos = 620
     for stat, value in character.stats.items():
         c.drawString(40, y_pos, f"{value}")
@@ -138,4 +178,4 @@ def fill_character_sheet(input_pdf, output_pdf, character):
 
 # Příklad použití
 character = generate_character()
-fill_character_sheet("dnd_character_sheet.pdf", "character_filled.pdf", character)
+fill_character_sheet("dnd_character_sheet.pdf", "character_sheet_filled.pdf", character)
