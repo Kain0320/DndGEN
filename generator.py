@@ -47,11 +47,21 @@ def generate_character():
     background = choose_option(backgrounds, "Vyber zázemí:")
 
 def generate_name(race, gender):
-    race_name = race.name if hasattr(race, "name") else str(race)  # Oprava chyby s objektem
+    """Umožní uživateli zadat vlastní jméno nebo vygeneruje náhodné."""
+    user_input = input("Chceš zadat vlastní jméno? (ano/ne): ").strip().lower()
+    if user_input == "ano":
+        name = input("Zadej jméno postavy: ").strip()
+        if name:  # Ověření, že něco zadal
+            return name
+        print("Nezadáno žádné jméno, generuji náhodné...")
+    # Pokud uživatel nezadal jméno nebo nezadal nic
+    race_name = race.name if hasattr(race, "name") else str(race)
+    
     if race_name not in names:
         raise ValueError(f"Rasa '{race_name}' není v databázi jmen!")
     if gender not in names[race_name]:
         raise ValueError(f"Pohlaví '{gender}' není dostupné pro rasu '{race_name}'!")
+
     return random.choice(names[race_name][gender])
  
 def generate_character():
@@ -63,16 +73,20 @@ def generate_character():
     gender = choose_gender()
     name = generate_name(race, gender)
     
-    character = Character(name, race, char_class, background, )
+    skills = []  # Initialize skills
+    traits = []  # Initialize traits
+    character = Character(name, race, char_class, background, hit_dice, skills, traits)
     constitution_mod = character.stats.get("Constitution", 0)  # Modifikátor Constitution
     character.hit_dice, character.hp = calculate_hit_points(char_class, constitution_mod)
     skills = character.set_skills()
+    traits = character.set_traits()
 
     print("\n=== VYTVOŘENÁ POSTAVA ===")
     print(character)
     print(f"HP: {character.hp}")  
     print(f"Hit Dice: {character.hit_dice}")
     print (f"Skills: {skills}")
+    print (f"Traits: {traits}")
     return character
 
 
@@ -87,7 +101,7 @@ def fill_character_sheet(input_pdf, output_pdf, character):
     overlay_pdf = "overlay.pdf"
     c = canvas.Canvas(overlay_pdf)
     
-    # Pozice závisí na konkrétním PDF – budeš muset upravit souřadnice!
+    # Pozice závisí na konkrétním PDF 
     c.setFont("Helvetica-Bold", 10)
     c.drawString(50, 715, character.name)  # Jméno
     c.drawString(270, 705, character.race.name)  # Rasa
@@ -96,9 +110,32 @@ def fill_character_sheet(input_pdf, output_pdf, character):
     c.drawString(290, 585, str(character.hp))  # Hit Dice
     c.drawString(233, 450, str(character.hit_dice))  # HP
     
+    skill_positions = {
+        "Acrobatics": (102, 462),
+        "Animal Handling": (102, 448),
+        "Arcana": (102, 434),
+        "Athletics": (102, 422),
+        "Deception": (102, 407),
+        "History": (102, 394),
+        "Insight": (102, 380),
+        "Intimidation": (102, 367),
+        "Investigation": (102, 350),
+        "Medicine": (102, 340),
+        "Nature": (102, 322),
+        "Perception": (102, 308),
+        "Performance": (102, 300),
+        "Persuasion": (102, 286),
+        "Religion": (102, 273),
+        "Sleight of Hand": (102, 257),
+        "Stealth": (102, 246),
+        "Survival": (102, 233)
+    }
+    for skill in character.skills:
+        if skill in skill_positions:
+            x, y = skill_positions[skill]
+            c.drawString(x, y, "•")  # Přidáme tečku
 
-    
-    # Atributy (pozice upravit podle layoutu PDF)
+    # Atributy 
     y_pos = 620
     for stat, value in character.stats.items():
         c.drawString(40, y_pos, f"{value}")

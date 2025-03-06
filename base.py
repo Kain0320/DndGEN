@@ -1,24 +1,30 @@
 import random
 
 class Character:
-    def __init__(self, name, race, char_class, background,skills=None):
+    def __init__(self, name, race, char_class, background,hit_dice, skills=None,traits=None):
         self.name = name
         self.race = race
         self.char_class = char_class
         self.background = background
         self.stats = self.generate_stats()
         self.stats = self.race.apply_modifiers(self.stats)  # Aplikuje bonusy rasy
-        self.inventory = self.generate_inventory()
         self.hit_dice = hit_dice[char_class.name]
         self.max_hp = random.randint(1, int(self.hit_dice[0]))  
         self.skills = self.set_skills()
+        self.trait = self.set_traits()
 
     def set_skills(self):
         """Spojí dovednosti z rasy, povolání a zázemí do jednoho seznamu."""
-        race_skills = self.race.skills if isinstance(self.race.skills, list) else [self.race.skills]
         background_skills = self.background.skills if isinstance(self.background.skills, list) else [self.background.skills]
-        return race_skills + background_skills
+        class_skills = self.char_class.skills if isinstance(self.char_class.skills, list) else [self.char_class.skills]
+        return  background_skills + class_skills
     
+    def set_traits(self):
+        race_traits = self.race.traits if isinstance(self.race.traits, list) else [self.race.traits]
+        
+        return race_traits
+
+                                                                                                     
     def generate_stats(self):
         """Generuje šest hlavních atributů (hod kostkami 4k6, nejnižší se zahodí)."""
         def roll_stat():
@@ -43,10 +49,9 @@ class Character:
         stats = "\n".join(f"{key}: {value}" for key, value in self.stats.items())
         return f"Name: {self.name}\nRace: {self.race.name}\nClass: {self.char_class.name}\nBackground: {self.background.name}\nStats:\n{stats}"
     class Race:
-        def __init__(self, name, stat_modifiers, skills=[], traits=[]):
+        def __init__(self, name, stat_modifiers, traits=[]):
             self.name = name
             self.stat_modifiers = stat_modifiers  # Bonusy k atributům (např. {"Strength": +2})
-            self.skills = skills  # Seznam dovedností získaných díky rase
             self.traits = traits  # Speciální schopnosti rasy
         
         def apply_modifiers(self, stats):
@@ -60,54 +65,54 @@ class Character:
             return stats
 
 races = {
-    "Human": Character.Race("Human", {"All": +1}, [], ["Versatile"]),
-    "Elf": Character.Race("Elf", {"Dexterity": +2}, ["Perception"], ["Darkvision", "Fey Ancestry"]),
-    "Dwarf": Character.Race("Dwarf", {"Constitution": +2}, ["Smith's Tools"], ["Darkvision", "Dwarven Resilience"]),
-    "Halfling": Character.Race("Halfling", {"Dexterity": +2}, ["Stealth"], ["Lucky", "Brave"]),
-    "Kabold": Character.Race("Kabold", {"Strength": -2, "Dexterity": +2}, ["Sneak"], ["Darkvision", "Pack Tactics"]),
-    "Gith": Character.Race("Gith", {"Intelligence": +1}, ["Survival"], ["Telepathy", "Githyanki Weapon Training"]),
-    "Tiefling": Character.Race("Tiefling", {"Charisma": +2}, ["Intimidation"], ["Darkvision", "Hellish Resistance"]),
-    "Dragonborn": Character.Race("Dragonborn", {"Strength": +2}, ["Intimidation"], ["Draconic Ancestry", "Breath Weapon"]),
-    "Gnome": Character.Race("Gnome", {"Intelligence": +2}, ["Arcana"], ["Darkvision", "Gnome Cunning"]),
+    "Human": Character.Race("Human", {"All": +1},["Versatile"]),
+    "Elf": Character.Race("Elf", {"Dexterity": +2},["Darkvision", "Fey Ancestry"]),
+    "Dwarf": Character.Race("Dwarf", {"Constitution": +2},["Darkvision", "Dwarven Resilience"]),
+    "Halfling": Character.Race("Halfling", {"Dexterity": +2}, ["Lucky", "Brave"]),
+    "Kabold": Character.Race("Kabold", {"Strength": -2, "Dexterity": +2},["Darkvision", "Pack Tactics"]),
+    "Gith": Character.Race("Gith", {"Intelligence": +1}, ["Telepathy", "Githyanki Weapon Training"]),
+    "Tiefling": Character.Race("Tiefling", {"Charisma": +2}, ["Darkvision", "Hellish Resistance"]),
+    "Dragonborn": Character.Race("Dragonborn", {"Strength": +2}, ["Draconic Ancestry", "Breath Weapon"]),
+    "Gnome": Character.Race("Gnome", {"Intelligence": +2},["Darkvision", "Gnome Cunning"]),
 }
 class Class:
     def __init__(self, name, hit_dice, starting_equipment, spellcasting=None, skills=[]):
         self.name = name
         self.hit_dice = hit_dice  # Např. "1d10"
+        self.skills = skills  # Seznam dovedností pro povolání
         self.starting_equipment = starting_equipment  # Počáteční vybavení
         self.spellcasting = spellcasting  # Seznam kouzel pro castery (může být None)
 classes = {
-    "Fighter": Class("Fighter", "1d10", ["Athletics", "Intimidation"], ["Longsword", "Shield"]),
-    "Wizard": Class("Wizard", "1d6", ["Arcana", "History"], ["Spellbook", "Dagger"], ["Fire Bolt", "Mage Hand"]),
-    "Rogue": Class("Rogue", "1d8", ["Stealth", "Deception"], ["Dagger", "Thieves' Tools"]),
-    "Cleric": Class("Cleric", "1d8", ["Medicine", "Insight"], ["Mace", "Holy Symbol"], ["Cure Wounds", "Sacred Flame"]),
-    "Bard": Class("Bard", "1d8", ["Performance", "Persuasion"], ["Rapier", "Lute"], ["Vicious Mockery", "Healing Word"]),
-    "Ranger": Class("Ranger", "1d10", ["Survival", "Animal Handling"], ["Longbow", "Arrows"]),
-    "Barbarian": Class("Barbarian", "1d12", ["Athletics", "Intimidation"], ["Greataxe"]),
-    "Sorcerer": Class("Sorcerer", "1d6", ["Arcana", "Persuasion"], ["Dagger"], ["Fire Bolt", "Mage Hand"]),
-    "Monk": Class("Monk", "1d8", ["Acrobatics", "Religion"], ["Shortsword"]),
-    "Paladin": Class("Paladin", "1d10", ["Religion", "Persuasion"], ["Longsword", "Shield"]),
-    "Druid": Class("Druid", "1d8", ["Nature", "Medicine"], ["Wooden Shield", "Scimitar"], ["Druidcraft", "Produce Flame"]),
-    "Warlock": Class("Warlock", "1d8", ["Arcana", "Deception"], ["Dagger"], ["Eldritch Blast", "Mage Hand"]),
+    "Fighter": Class("Fighter", "1d10", ["Longsword", "Shield"], None, ["Athletics", "Intimidation"]),
+    "Wizard": Class("Wizard", "1d6", ["Spellbook", "Dagger"], ["Fire Bolt", "Mage Hand"], ["Arcana", "History"]),
+    "Rogue": Class("Rogue", "1d8", ["Dagger", "Thieves' Tools"], None, ["Stealth", "Deception"]),
+    "Cleric": Class("Cleric", "1d8", ["Mace", "Holy Symbol"], ["Cure Wounds", "Sacred Flame"], ["Medicine", "Insight"]),
+    "Bard": Class("Bard", "1d8", ["Rapier", "Lute"], ["Vicious Mockery", "Healing Word"], ["Performance", "Persuasion"]),
+    "Ranger": Class("Ranger", "1d10", ["Longbow", "Arrows"], None, ["Survival", "Animal Handling"]),
+    "Barbarian": Class("Barbarian", "1d12", ["Greataxe"], None, ["Athletics", "Intimidation"]),
+    "Sorcerer": Class("Sorcerer", "1d6", ["Dagger"], ["Fire Bolt", "Mage Hand"], ["Arcana", "Persuasion"]),
+    "Monk": Class("Monk", "1d8", ["Shortsword"], None, ["Acrobatics", "Religion"]),
+    "Paladin": Class("Paladin", "1d10", ["Longsword", "Shield"], None, ["Religion", "Persuasion"]),
+    "Druid": Class("Druid", "1d8", ["Wooden Shield", "Scimitar"], ["Druidcraft", "Produce Flame"], ["Nature", "Medicine"]),
+    "Warlock": Class("Warlock", "1d8", ["Dagger"], ["Eldritch Blast", "Mage Hand"], ["Arcana", "Deception"]),
 }
 class Background:
-    def __init__(self, name, starting_equipment, feature, skills=[], traits=[]):
+    def __init__(self, name, starting_equipment, feature,skills=[]):
         self.name = name
         self.skills = skills
         self.starting_equipment = starting_equipment
         self.feature = feature  # Speciální schopnost zázemí 
-        self.traits = traits  # Speciální vlastnosti zázemí 
 backgrounds = {
-    "Noble": Background("Noble", ["History", "Persuasion"], ["Fine Clothes", "Signet Ring"], "Position of Privilege"),
-    "Soldier": Background("Soldier", ["Athletics", "Intimidation"], ["Military Gear", "Playing Cards"], "Military Rank"),
-    "Criminal": Background("Criminal", ["Stealth", "Deception"], ["Crowbar", "Dark Clothes"], "Criminal Contact"),
-    "Sage": Background("Sage", ["Arcana", "History"], ["Ink and Quill", "Scrolls"], "Researcher"),
-    "Acolyte": Background("Acolyte", ["Insight", "Religion"], ["Holy Symbol", "Prayer Book"], "Shelter of the Faithful"),
-    "Entertainer": Background("Entertainer", ["Performance", "Acrobatics"], ["Musical Instrument", "Costume"], "By Popular Demand"),
-    "Folk Hero": Background("Folk Hero", ["Animal Handling", "Survival"], ["Rustic Gear", "Shovel"], "Rustic Hospitality"),
-    "Guild Artisan": Background("Guild Artisan", ["Insight", "Persuasion"], ["Artisan Tools", "Letter of Introduction"], "Guild Membership"),
-    "Hermit": Background("Hermit", ["Medicine", "Religion"], ["Scrolls", "Herbalism Kit"], "Discovery"),
-    "Outlander": Background("Outlander", ["Athletics", "Survival"], ["Staff", "Hunting Trap"], "Wanderer"),
+    "Noble": Background("Noble", ["Fine Clothes", "Signet Ring"], "Position of Privilege",["History", "Persuasion"]),
+    "Soldier": Background("Soldier",["Military Gear", "Playing Cards"], "Military Rank", ["Athletics", "Intimidation"]),
+    "Criminal": Background("Criminal",["Crowbar", "Dark Clothes"], ["Criminal Contact"], ["Stealth", "Deception"]),
+    "Sage": Background("Sage",["Ink and Quill", "Scrolls"], "Researcher", ["Arcana", "History"]),
+    "Acolyte": Background("Acolyte", ["Holy Symbol", "Prayer Book"], "Shelter of the Faithful", ["Insight", "Religion"]),
+    "Entertainer": Background("Entertainer", ["Musical Instrument", "Costume"], "By Popular Demand", ["Performance", "Acrobatics"]),
+    "Folk Hero": Background("Folk Hero", ["Rustic Gear", "Shovel"], "Rustic Hospitality", ["Animal Handling", "Survival"]),
+    "Guild Artisan": Background("Guild Artisan", ["Artisan Tools", "Letter of Introduction"], "Guild Membership",["Insight", "Persuasion"]),
+    "Hermit": Background("Hermit", ["Scrolls", "Herbalism Kit"], "Discovery",["Medicine", "Religion"]),
+    "Outlander": Background("Outlander",["Staff", "Hunting Trap"], "Wanderer",["Athletics", "Survival"]),
 }
 hit_dice = {
     "Fighter": "1d10",
