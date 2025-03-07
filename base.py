@@ -106,7 +106,7 @@ spells_by_class = {
         "spells": ["Cure Wounds", "Bless", "Guiding Bolt", "Healing Word", "Detect Magic", "Protection from Evil and Good", "Inflict Wounds", "Command", "Sanctuary", "Create Water"]
     },
     "Sorcerer": {
-        "cntrips": ["Fire Bolt", "Mage Hand", "Ray of Frost", "Minor Illusion", "Message", "Shocking Grasp", "Acid Splash"],
+        "cantrips": ["Fire Bolt", "Mage Hand", "Ray of Frost", "Minor Illusion", "Message", "Shocking Grasp", "Acid Splash"],
         "spells": ["Shield", "Mage Armor", "Magic Missile", "Burning Hands", "Chromatic Orb", "Thunderwave", "Expeditious Retreat", "Witch Bolt", "Disguise Self"]
     },
     "Bard": {
@@ -177,7 +177,7 @@ skill_positions = {
         "Acrobatics": (102, 462),
         "Animal Handling": (102, 448),
         "Arcana": (102, 434),
-        "Athletics": (102, 422),
+        "Athletics": (102, 421),
         "Deception": (102, 407),
         "History": (102, 394),
         "Insight": (102, 380),

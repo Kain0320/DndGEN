@@ -136,6 +136,10 @@ def generate_character():
 import PyPDF2
 from reportlab.pdfgen import canvas
 
+def calculate_stat_bonus(stat_value):
+    """Vypočítá bonus na základě hodnoty statu."""
+    return (stat_value - 10) // 2
+
 
 def fill_character_sheet(input_pdf, output_pdf, character):
     """Vepíše data do existujícího D&D PDF sheetu."""
@@ -145,19 +149,21 @@ def fill_character_sheet(input_pdf, output_pdf, character):
     c = canvas.Canvas(overlay_pdf)
     
     # Pozice závisí na konkrétním PDF 
-    c.setFont("Helvetica-Bold", 10)
+    c.setFont("Helvetica-Bold", 14)
     c.drawString(50, 715, character.name)  # Jméno
     c.drawString(270, 705, character.race.name)  # Rasa
     c.drawString(270, 730, character.char_class.name)  # Povolání
     c.drawString(385, 730, character.background.name)  # Zázemí
     c.drawString(290, 585, str(character.hp))  # Hit Dice
-    c.drawString(233, 450, str(character.hit_dice))  # HP
+    c.drawString(233, 448, str(character.hit_dice))  # HP
     
+    c.setFont("Helvetica", 12)
     for skill in character.skills:
         if skill in skill_positions:
             x, y = skill_positions[skill]
             c.drawString(x, y, "•")  # Přidáme tečku
 
+    c.setFont("Helvetica", 9)
     traits_x = 412  # X souřadnice
     traits_y = 394  # Začátek seznamu vlastností
     # ✅ Vykreslení traits (vlastností)
@@ -168,36 +174,50 @@ def fill_character_sheet(input_pdf, output_pdf, character):
             c.drawString(traits_x, traits_y, line)
             traits_y -= 10  # Posun dolů pro další řádek
 
+    c.setFont("Helvetica", 13)
     y_pos = 620
     for stat, value in character.stats.items():
         c.drawString(40, y_pos, f"{value}")
         y_pos -= 70
     
-    
-    c.showPage()  # Ukončí první stránku
-    c.showPage()  # Ukončí druhou stránku
-    
-    c.setFont("Helvetica", 10)
-    spell_x = 50  # X souřadnice pro kouzla
-    spell_y = 700  # Y souřadnice začátku seznamu kouzel
-    c.drawString(spell_x, spell_y, "=== Spellcasting ===")
-    spell_y -= 15  
+    c.showPage()
+    c.showPage()
 
+  
     # ✅ Přidání spellcasting class & DC
-    c.drawString(spell_x, spell_y, f"Spellcasting Class: {character.char_class.name}")
-    spell_y -= 12
-    spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + character.stats.get("Charisma", 0)  # Např. pro Warlocka
-    spell_attack_bonus = spell_save_dc - 8
-    c.drawString(spell_x, spell_y, f"Spell Save DC: {spell_save_dc}")
-    spell_y -= 12
-    c.drawString(spell_x, spell_y, f"Spell Attack Bonus: +{spell_attack_bonus}")
-    spell_y -= 15  
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, 712, f": {character.char_class.name}")
+    
+    if character.char_class.name == "Warlock":
+        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Charisma", 0))
+        spell_attack_bonus = spell_save_dc - 8
+    elif character.char_class.name == "Wizard":
+        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Intelligence", 0))
+        spell_attack_bonus = spell_save_dc - 8
+    elif character.char_class.name == "Cleric":
+        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Wisdom", 0))
+        spell_attack_bonus = spell_save_dc - 8
+    # Přidejte další třídy podle potřeby
+    else:
+        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2)
+        spell_attack_bonus = spell_save_dc - 8
 
-    # ✅ Vykreslení cantripů a kouzel
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(385, 720, f":{spell_save_dc}")
+    c.drawString(490, 720, f":{spell_attack_bonus}")
+
+
+    # ✅ Přidání cantripů a spellů
+    spell_x = 40  # Define spell_x with an appropriate value
+    spell_y = 610  # Define spell_y with an appropriate value
     for spell_type, spells in character.spells.items():
         c.setFont("Helvetica-Bold", 10)
         c.drawString(spell_x, spell_y, f"{spell_type.capitalize()}s:")
         spell_y -= 12
+        textwrap.wrap(f"{spell_type.capitalize()}s:", width = 40)
+        for line in wrapped_text:
+            c.drawString(spell_x, spell_y, line)
+            traits_y -= 5
         c.setFont("Helvetica", 9)
 
         for spell in spells:
@@ -207,6 +227,7 @@ def fill_character_sheet(input_pdf, output_pdf, character):
                 c.drawString(spell_x, spell_y, line)
                 spell_y -= 10  
             spell_y -= 5  
+
 
     c.save()
 
@@ -221,17 +242,15 @@ def fill_character_sheet(input_pdf, output_pdf, character):
             base_page = base_pdf.pages[i]
             if i == 0:  # Pouze na první stránku přidáme overlay
                 overlay_page = overlay.pages[0]
+                base_page.merge_page(overlay_page) 
+                writer.add_page(base_page) 
+        for i in range(len(base_pdf.pages)):
+            base_page = base_pdf.pages[i]
+            if i == 2:  # ⚠️ TŘETÍ STRÁNKA (index 2)
+                overlay_page = overlay.pages[2]
                 base_page.merge_page(overlay_page)
-            writer.add_page(base_page)
-        if len(base_pdf.pages) < 3:
-            writer.add_page(overlay.pages[3])
-        else:
-            base_page = base_pdf.pages[2]
-            overlay_page = overlay.pages[1]
-            base_page.merge_page(overlay_page)
-            writer.add_page(base_page)
-
-        
+                writer.add_page(base_page)
+            
         # Uložíme výsledek
         with open(output_pdf, "wb") as output_file:
             writer.write(output_file)
@@ -241,3 +260,4 @@ def fill_character_sheet(input_pdf, output_pdf, character):
 # Příklad použití
 character = generate_character()
 fill_character_sheet("dnd_character_sheet.pdf", "character_sheet_filled.pdf", character)
+
