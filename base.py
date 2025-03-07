@@ -97,18 +97,38 @@ classes = {
     "Warlock": Class("Warlock", "1d8", ["Dagger"],["Arcana", "Deception"]),
 }
 spells_by_class = {
-    "Wizard": ["Magic Missile", "Fireball", "Shield"],
-    "Cleric": ["Cure Wounds", "Bless", "Guiding Bolt", "Healing Word", 
-               "Detect Magic", "Spiritual Weapon", "Sacred Flame", "Protection from Evil and Good"],
-    "Sorcerer": ["Fire Bolt", "Mage Hand", "Shield", "Mage Armor", "Burning Hands",
-                 "Magic Missile", "Chromatic Orb", "Counterspell", "Detect Magic"],
-    "Bard": ["Vicious Mockery", "Healing Word", "Charm Person", "Disguise Self", 
-             "Dissonant Whispers", "Tasha's Hideous Laughter", "Cure Wounds", "Faerie Fire", "Heroism"],
-    "Warlock": ["Eldritch Blast", "Mage Hand", "Hex", "Armor of Agathys", "Shield",
-                "Hellish Rebuke", "Detect Magic", "Burning Hands", "Darkness"],
-    "Druid": ["Druidcraft", "Produce Flame", "Healing Word", "Entangle", "Thorn Whip",
-              "Faerie Fire", "Goodberry", "Cure Wounds", "Moonbeam", "Barkskin"],
-    "Paladin": ["Bless", "Shield", "Cure Wounds", "Divine Smite", "Wrathful Smite"]
+    "Wizard": {
+        "cantrips": ["Mage Hand", "Fire Bolt", "Prestidigitation", "Ray of Frost", "Minor Illusion", "Message", "Light"],
+        "spells": ["Magic Missile", "Shield", "Mage Armor", "Burning Hands", "Detect Magic", "Identify", "Feather Fall", "Chromatic Orb", "Sleep", "Thunderwave"]
+    },
+    "Cleric": {
+        "cantrips": ["Sacred Flame", "Thaumaturgy", "Guidance", "Spare the Dying", "Light", "Resistance"],
+        "spells": ["Cure Wounds", "Bless", "Guiding Bolt", "Healing Word", "Detect Magic", "Protection from Evil and Good", "Inflict Wounds", "Command", "Sanctuary", "Create Water"]
+    },
+    "Sorcerer": {
+        "cntrips": ["Fire Bolt", "Mage Hand", "Ray of Frost", "Minor Illusion", "Message", "Shocking Grasp", "Acid Splash"],
+        "spells": ["Shield", "Mage Armor", "Magic Missile", "Burning Hands", "Chromatic Orb", "Thunderwave", "Expeditious Retreat", "Witch Bolt", "Disguise Self"]
+    },
+    "Bard": {
+        "cantrips": ["Vicious Mockery", "Mage Hand", "Prestidigitation", "Message", "Dancing Lights", "Light"],
+        "spells": ["Healing Word", "Charm Person", "Disguise Self", "Dissonant Whispers", "Tasha's Hideous Laughter", "Faerie Fire", "Sleep", "Identify", "Unseen Servant", "Silent Image"]
+    },
+    "Warlock": {
+        "cantrips": ["Eldritch Blast", "Mage Hand", "Thaumaturgy", "Minor Illusion", "Chill Touch", "Friends"],
+        "spells": ["Hex", "Armor of Agathys", "Shield", "Hellish Rebuke", "Detect Magic", "Witch Bolt", "Cause Fear", "Expeditious Retreat"]
+    },
+    "Druid": {
+        "cantrips": ["Druidcraft", "Produce Flame", "Thorn Whip", "Guidance", "Shillelagh", "Mending"],
+        "spells": ["Healing Word", "Entangle", "Faerie Fire", "Goodberry", "Cure Wounds", "Speak with Animals", "Thunderwave", "Create Water"]
+    },
+    "Paladin": {
+        "cantrips": [],  # Paladin nemá cantripy
+        "spells": ["Bless", "Shield", "Cure Wounds", "Divine Smite", "Wrathful Smite", "Heroism", "Compelled Duel", "Thunderous Smite", "Detect Evil and Good"]
+    },
+    "Ranger": {
+        "cantrips": [],  # Ranger nemá cantripy
+        "spells": ["Hunter's Mark", "Cure Wounds", "Detect Magic", "Ensnaring Strike", "Longstrider", "Jump", "Goodberry", "Fog Cloud", "Alarm"]
+    }
 }
 class Background:
     def __init__(self, name, starting_equipment, feature,skills=[]):
@@ -188,48 +208,76 @@ trait_descriptions = {
     "Breath Weapon": "Exhales a breath attack that deals elemental damage.",
     "Gnome Cunning": "Advantage on saving throws against magic that affects Intelligence, Wisdom, or Charisma."
 }
+class_spell_slots = {
+    "Wizard": {"cantrips": 3, "spells": 6},
+    "Cleric": {"cantrips": 3, "spells": 5},
+    "Druid": {"cantrips": 2, "spells": 4},
+    "Sorcerer": {"cantrips": 4, "spells": 2},
+    "Warlock": {"cantrips": 2, "spells": 2},
+    "Bard": {"cantrips": 2, "spells": 4},
+    "Paladin": {"cantrips": 0, "spells": 2},
+    "Ranger": {"cantrips": 0, "spells": 2}
+}
 spells_descriptions = {
+    # ✅ CANTRIPS
     "Fire Bolt": "A beam of fire shoots toward a creature, dealing 1d10 fire damage on a hit.",
     "Mage Hand": "Creates a spectral hand that can manipulate objects. It can't attack, open doors, or carry more than 10 pounds.",
-    "Cure Wounds": "A creature you touch regains hit points equal to 1d8 + your spellcasting modifier.",
-    "Magic Missile": "Creates darts of magical force that hit automatically, dealing 1d4 + 1 force damage each.",
-    "Bless": "You bless up to three creatures of your choice, granting them a 1d4 bonus to attack rolls and saving throws for up to 1 minute.",
-    "Shield": "A magical force surrounds you, granting +5 AC for 1 round and negating Magic Missile's damage.",
     "Vicious Mockery": "You unleash a string of insults. The target must succeed on a Wisdom saving throw or take 1d4 psychic damage and have disadvantage on its next attack roll.",
-    "Healing Word": "A creature of your choice within 60 feet regains hit points equal to 1d4 + your spellcasting modifier.",
     "Druidcraft": "You create a tiny, harmless sensory effect, such as changing the color of flowers or creating a puff of wind. No damage.",
     "Produce Flame": "You create a flame in your hand. You can throw it at a creature within 30 feet, dealing 1d8 fire damage on a hit.",
-    "Hunter's Mark": "You choose a creature within 90 feet. The target takes an extra 1d6 damage from your weapon attacks.",
-    "Burning Hands": "A cone of fire erupts from your hands, dealing 3d6 fire damage to creatures in a 15-foot cone (Dex save for half).",
-    "Detect Magic": "You sense the presence of magic within 30 feet of you for 10 minutes.",
-    "Sleep": "You put creatures within a 20-foot radius to sleep. The total hit points of creatures affected can't exceed 5d8.",
-    "Mage Armor": "You touch a willing creature and protect them with magical armor, giving them 13 + Dexterity modifier AC for 8 hours.",
-    "Chromatic Orb": "You create an orb of energy (choose acid, cold, fire, lightning, poison, or thunder), dealing 3d8 damage of the chosen type on a hit.",
-    "Guiding Bolt": "A flash of light streaks toward a creature, dealing 4d6 radiant damage on a hit and granting advantage on the next attack roll against the target.",
-    "Spiritual Weapon": "You create a floating, magical weapon that strikes at your enemies, dealing 1d8 + your spellcasting modifier force damage.",
     "Sacred Flame": "A flame-like radiance descends upon a creature, dealing 1d8 radiant damage (Dex save for half).",
-    "Protection from Evil and Good": "You protect a creature from certain creatures and types of attacks, giving them advantage on certain saving throws.",
-    "Charm Person": "You attempt to charm a humanoid within range. It must succeed on a Wisdom saving throw or be charmed for 1 hour.",
-    "Disguise Self": "You alter your appearance, including clothing and weapons, for up to 1 hour.",
-    "Dissonant Whispers": "You whisper a discordant melody that only the target can hear, dealing 3d6 psychic damage. The target must also flee as far as possible.",
-    "Tasha's Hideous Laughter": "You cause a creature to fall into fits of laughter. The target must succeed on a Wisdom saving throw or be incapacitated and unable to take actions for 1 minute.",
-    "Hex": "You curse a creature, giving you advantage on attack rolls against it and causing it to take an extra 1d6 necrotic damage from your attacks.",
-    "Armor of Agathys": "You surround yourself with magical frost, granting 5 temporary hit points. Any creature that hits you takes 5 cold damage.",
-    "Hellish Rebuke": "You retaliate with a fiery blast when damaged by a creature, dealing 2d10 fire damage to the attacker (Dex save for half).",
-    "Entangle": "You cause plants to grow and ensnare creatures in the area, restraining them. A creature must succeed on a Strength saving throw or be restrained.",
+    "Thaumaturgy": "You create a supernatural effect such as making your voice boom, flames flicker, or doors fly open. No damage.",
+    "Guidance": "You touch a creature, giving them a +1d4 bonus to a single ability check within the next minute.",
+    "Prestidigitation": "A minor magical trick that creates small sensory effects, cleans or soils objects, lights candles, or chills/warms nonliving material.",
+    "Ray of Frost": "A frigid beam of blue-white light strikes a creature, dealing 1d8 cold damage and reducing its speed by 10 feet until your next turn.",
+    "Eldritch Blast": "A beam of crackling energy strikes a creature, dealing 1d10 force damage on a hit.",
+    "Toll the Dead": "A creature hears a haunting bell. If it has missing hit points, it takes 1d12 necrotic damage (otherwise 1d8).",
+    "Shillelagh": "You imbue a wooden weapon with magic. It deals 1d8 damage and uses your spellcasting ability for attack rolls.",
     "Thorn Whip": "You create a magical vine to lash out at a creature, dealing 1d6 piercing damage and pulling the target up to 10 feet closer.",
+    "Minor Illusion": "You create a sound or an image within range that lasts up to 1 minute.",
+    "Message": "You whisper a message to a target within 120 feet, and only they can hear the reply.",
+    "Light": "You touch an object, making it shine bright light for 20 feet and dim light for another 20 feet.",
+    "Chill Touch": "You create a ghostly skeletal hand that deals 1d8 necrotic damage and prevents healing until your next turn.",
+    "Friends": "For 1 minute, you have advantage on Charisma checks against a target, but they become hostile afterward.",
+    "Dancing Lights": "You create up to four floating lights that illuminate an area.",
+    "Mending": "You repair a broken object, restoring up to 1 foot of damage.",
+
+    # ✅ 1ST-LEVEL SPELLS
+    "Magic Missile": "Creates darts of magical force that hit automatically, dealing 1d4 + 1 force damage each.",
+    "Shield": "A magical force surrounds you, granting +5 AC for 1 round and negating Magic Missile's damage.",
+    "Mage Armor": "You touch a willing creature and protect them with magical armor, giving them 13 + Dexterity modifier AC for 8 hours.",
+    "Burning Hands": "A cone of fire erupts from your hands, dealing 3d6 fire damage to creatures in a 15-foot cone (Dex save for half).",
+    "Cure Wounds": "A creature you touch regains hit points equal to 1d8 + your spellcasting modifier.",
+    "Healing Word": "A creature of your choice within 60 feet regains hit points equal to 1d4 + your spellcasting modifier.",
+    "Bless": "You bless up to three creatures of your choice, granting them a 1d4 bonus to attack rolls and saving throws for up to 1 minute.",
+    "Guiding Bolt": "A flash of light streaks toward a creature, dealing 4d6 radiant damage on a hit and granting advantage on the next attack roll against the target.",
+    "Protection from Evil and Good": "You protect a creature from certain creatures and types of attacks, giving them advantage on certain saving throws.",
+    "Hunter's Mark": "You choose a creature within 90 feet. The target takes an extra 1d6 damage from your weapon attacks.",
+    "Detect Magic": "You sense the presence of magic within 30 feet of you for 10 minutes.",
+    "Entangle": "You cause plants to grow and ensnare creatures in the area, restraining them. A creature must succeed on a Strength saving throw or be restrained.",
     "Faerie Fire": "You outline creatures in light, granting advantage to attack rolls against them for 1 minute.",
     "Goodberry": "You create up to 10 magical berries that each restore 1 hit point when consumed.",
-    "Moonbeam": "A silvery beam of light shines down on a creature, dealing 2d10 radiant damage (Constitution save for half).",
-    "Barkskin": "You toughen the target's skin, granting them a minimum AC of 16 for up to 1 hour.",
     "Divine Smite": "You channel divine energy to deal extra radiant damage on a successful melee hit. The damage is 2d8 for a first-level spell slot, plus 1d8 for each level higher.",
-    "Wrathful Smite": "You imbue your weapon with thunderous power, dealing 1d6 thunder damage and potentially frightening the target (Wisdom save to resist).",
-    "Lay on Hands": "You can heal a creature by touch, restoring a number of hit points equal to your Paladin level (maximum 5 times per long rest).",
-    "Thunderous Smite": "You imbue your weapon with thunderous power, dealing 2d6 thunder damage and knocking back your target (Strength save to resist).",
-    "Absorb Elements": "You capture some of the incoming energy from an elemental attack, reducing damage by 1d6 (up to 3d6 at higher levels).",
-    "Spike Growth": "You cause the ground in an area to become covered in sharp thorns, dealing 2d4 piercing damage to creatures that move through it."
+    "Wrathful Smite": "You imbue your weapon with divine power, dealing 1d6 psychic damage and potentially frightening the target (Wisdom save to resist).",
+    "Thunderwave": "A wave of force erupts from you, dealing 2d8 thunder damage to creatures within 15 feet (Con save for half).",
+    "Sleep": "You put creatures in a 20-foot radius to sleep. Affects creatures with the lowest hit points first.",
+    "Feather Fall": "Slows the fall of up to five creatures, preventing fall damage.",
+    "Identify": "You touch an object and learn its magical properties.",
+    "Command": "You speak a one-word command to a creature, which it must obey on its next turn.",
+    "Sanctuary": "You ward a creature against attack. Enemies must make a Wisdom save to attack it.",
+    "Create Water": "You create 10 gallons of clean water in an open container or cause rain.",
+    "Chromatic Orb": "You throw an orb of energy (acid, cold, fire, lightning, poison, or thunder), dealing 3d8 damage of the chosen type.",
+    "Witch Bolt": "You create a sustained arc of lightning that deals 1d12 damage and remains connected for up to 1 minute.",
+    "Disguise Self": "You alter your appearance for up to 1 hour.",
+    "Dissonant Whispers": "You whisper a melody that causes a creature to flee in fear, taking 3d6 psychic damage.",
+    "Tasha's Hideous Laughter": "A creature falls into fits of laughter, becoming incapacitated for up to 1 minute (Wis save ends).",
+    "Heroism": "A willing creature gains temporary hit points and becomes immune to fear.",
+    "Compelled Duel": "You force a creature to duel you. It must make a Wisdom save or only attack you.",
+    "Thunderous Smite": "Your next melee attack deals extra 2d6 thunder damage and can push the target away (Strength save to resist).",
+    "Expeditious Retreat": "You gain the ability to take the Dash action as a bonus action for up to 10 minutes.",
+    "Fog Cloud": "You create a 20-foot-radius sphere of fog that heavily obscures the area.",
+    "Alarm": "You create a magical alarm that alerts you when a creature enters an area."
 }
-
 
 
 
