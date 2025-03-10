@@ -187,30 +187,7 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
     # ✅ Přidání spellcasting class & DC
     c.setFont("Helvetica-Bold", 14)
     if character.char_class.name == "Warlock":
-        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Charisma", 0))
-        spell_attack_bonus = spell_save_dc - 8
-    elif character.char_class.name == "Wizard":
-        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Intelligence", 0))
-        spell_attack_bonus = spell_save_dc - 8
-    elif character.char_class.name == "Cleric":
-        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Wisdom", 0))
-        spell_attack_bonus = spell_save_dc - 8
-    elif character.char_class.name == "Druid":
-        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Wisdom", 0))
-        spell_attack_bonus = spell_save_dc - 8
-    elif character.char_class.name == "Bard":
-        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Charisma", 0))
-        spell_attack_bonus = spell_save_dc - 8
-    elif character.char_class.name == "Sorcerer":
-        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Charisma", 0))
-        spell_attack_bonus = spell_save_dc - 8
-    elif character.char_class.name == "Paladin":
-        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Charisma", 0))
-        spell_attack_bonus = spell_save_dc - 8
-    elif character.char_class.name == "Ranger":
-        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Wisdom", 0))
-        spell_attack_bonus = spell_save_dc - 8
-    # Přidejte další třídy podle potřeby
+       
     else:
         spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2)
         spell_attack_bonus = spell_save_dc - 8

@@ -220,7 +220,7 @@ class_spell_slots = {
     "Barbarian": {"cantrips": 0, "spells": 0},
     "Monk": {"cantrips": 0, "spells": 0},
     "Rogue": {"cantrips": 0, "spells": 0},
-    "Fighter": {"cantrips": 0, "spells": 0},
+    "Fighter": {"cantrips": 0, "spells": 0}
 }
 spells_descriptions = {
     # ✅ 1ST-LEVEL SPELLS
