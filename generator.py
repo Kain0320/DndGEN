@@ -307,4 +307,3 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
 # Příklad použití
 character = generate_character()
 fill_character_sheet("dnd_character_sheet.pdf", "character_sheet_filled.pdf", character, class_spell_slots[character.char_class.name])
-

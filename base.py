@@ -289,6 +289,3 @@ cantripps_descriptions = {
     "Mending": "You repair a broken object, restoring up to 1 foot of damage.",
 
 }
-
-
-
