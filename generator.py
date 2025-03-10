@@ -1,4 +1,4 @@
-from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions
+from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions
 
 # Define class_spells using spells_by_class
 class_spells = spells_by_class
@@ -141,7 +141,7 @@ def calculate_stat_bonus(stat_value):
     return (stat_value - 10) // 2
 
 
-def fill_character_sheet(input_pdf, output_pdf, character):
+def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
     """Vepíše data do existujícího D&D PDF sheetu."""
     
     # Vytvoříme overlay s textem
@@ -186,8 +186,6 @@ def fill_character_sheet(input_pdf, output_pdf, character):
   
     # ✅ Přidání spellcasting class & DC
     c.setFont("Helvetica-Bold", 14)
-    c.drawString(50, 712, f": {character.char_class.name}")
-    
     if character.char_class.name == "Warlock":
         spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Charisma", 0))
         spell_attack_bonus = spell_save_dc - 8
@@ -195,6 +193,21 @@ def fill_character_sheet(input_pdf, output_pdf, character):
         spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Intelligence", 0))
         spell_attack_bonus = spell_save_dc - 8
     elif character.char_class.name == "Cleric":
+        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Wisdom", 0))
+        spell_attack_bonus = spell_save_dc - 8
+    elif character.char_class.name == "Druid":
+        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Wisdom", 0))
+        spell_attack_bonus = spell_save_dc - 8
+    elif character.char_class.name == "Bard":
+        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Charisma", 0))
+        spell_attack_bonus = spell_save_dc - 8
+    elif character.char_class.name == "Sorcerer":
+        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Charisma", 0))
+        spell_attack_bonus = spell_save_dc - 8
+    elif character.char_class.name == "Paladin":
+        spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Charisma", 0))
+        spell_attack_bonus = spell_save_dc - 8
+    elif character.char_class.name == "Ranger":
         spell_save_dc = 8 + character.stats.get("Proficiency Bonus", 2) + calculate_stat_bonus(character.stats.get("Wisdom", 0))
         spell_attack_bonus = spell_save_dc - 8
     # Přidejte další třídy podle potřeby
@@ -211,24 +224,58 @@ def fill_character_sheet(input_pdf, output_pdf, character):
     spell_x = 40  # Define spell_x with an appropriate value
     spell_y = 610  # Define spell_y with an appropriate value
     for spell_type, spells in character.spells.items():
-        c.setFont("Helvetica-Bold", 10)
+        c.setFont("Helvetica", 10)
         c.drawString(spell_x, spell_y, f"{spell_type.capitalize()}s:")
-        spell_y -= 12
-        textwrap.wrap(f"{spell_type.capitalize()}s:", width = 40)
-        for line in wrapped_text:
-            c.drawString(spell_x, spell_y, line)
-            traits_y -= 5
-        c.setFont("Helvetica", 9)
+        spell_y -= 10  # Posun dolů pro další řádek
+        wrapped_text = textwrap.wrap(f"{spell_type.capitalize()}s:", width=30)
+        if spell_limits["cantrips"] == 2:
+            for spell in spells:
+                if spell_type.lower() == "cantrips":
+                    description = cantripps_descriptions.get(spell, "Neznámé kouzlo.")
+                else:
+                    description = spells_descriptions.get(spell, "Neznámé kouzlo.")
+                
+                wrapped_spell = textwrap.wrap(f"{spell}: {description}", width=35)
+                for line in wrapped_spell:
+                    c.drawString(spell_x, spell_y, line)
+                    spell_y -= 13
+                spell_y -= 5
+            if spell_type.lower() == "cantrips":
+                 spell_y = 437
+        c.setFont("Helvetica", 6)
+        if spell_limits["cantrips"] >= 3:
+            for spell in spells:
+                if spell_type.lower() == "cantrips":
+                    description = cantripps_descriptions.get(spell, "Neznámé kouzlo.")
+                else:
+                    description = spells_descriptions.get(spell, "Neznámé kouzlo.")
+                
+                wrapped_spell = textwrap.wrap(f"{spell}: {description}", width=60)
+                for line in wrapped_spell:
+                    c.drawString(spell_x, spell_y, line)
+                    spell_y -= 6
+                spell_y -= 5
+            if spell_type.lower() == "cantrips":
+                 spell_y = 437  # Reset pozice pro další typ kouzel
+            
+        
+        c.setFont("Helvetica", 10)
+        if spell_limits["cantrips"] == 0:
+            for spell in spells:
+                if spell_type.lower() == "cantrips":
+                    description = cantripps_descriptions.get(spell, "Neznámé kouzlo.")
+                else:
+                    description = spells_descriptions.get(spell, "Neznámé kouzlo.")
+                
+                wrapped_spell = textwrap.wrap(f"{spell}: {description}", width=40)
+                for line in wrapped_spell:
+                    c.drawString(spell_x, spell_y, line)
+                    spell_y -= 10
+                spell_y -= 5
+            if spell_type.lower() == "cantrips":
+                 spell_y = 437
 
-        for spell in spells:
-            description = spells_descriptions.get(spell, "Neznámé kouzlo.")
-            wrapped_spell = textwrap.wrap(f"{spell}: {description}", width=70)
-            for line in wrapped_spell:
-                c.drawString(spell_x, spell_y, line)
-                spell_y -= 10  
-            spell_y -= 5  
-
-
+            
     c.save()
 
     # Otevřeme původní PDF a overlay
@@ -259,5 +306,5 @@ def fill_character_sheet(input_pdf, output_pdf, character):
 
 # Příklad použití
 character = generate_character()
-fill_character_sheet("dnd_character_sheet.pdf", "character_sheet_filled.pdf", character)
+fill_character_sheet("dnd_character_sheet.pdf", "character_sheet_filled.pdf", character, class_spell_slots[character.char_class.name])
 

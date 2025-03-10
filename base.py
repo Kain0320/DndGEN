@@ -216,35 +216,16 @@ class_spell_slots = {
     "Warlock": {"cantrips": 2, "spells": 2},
     "Bard": {"cantrips": 2, "spells": 4},
     "Paladin": {"cantrips": 0, "spells": 2},
-    "Ranger": {"cantrips": 0, "spells": 2}
+    "Ranger": {"cantrips": 0, "spells": 2},
+    "Barbarian": {"cantrips": 0, "spells": 0},
+    "Monk": {"cantrips": 0, "spells": 0},
+    "Rogue": {"cantrips": 0, "spells": 0},
+    "Fighter": {"cantrips": 0, "spells": 0},
 }
 spells_descriptions = {
-    # ✅ CANTRIPS
-    "Fire Bolt": "A beam of fire shoots toward a creature, dealing 1d10 fire damage on a hit.",
-    "Mage Hand": "Creates a spectral hand that can manipulate objects. It can't attack, open doors, or carry more than 10 pounds.",
-    "Vicious Mockery": "You unleash a string of insults. The target must succeed on a Wisdom saving throw or take 1d4 psychic damage and have disadvantage on its next attack roll.",
-    "Druidcraft": "You create a tiny, harmless sensory effect, such as changing the color of flowers or creating a puff of wind. No damage.",
-    "Produce Flame": "You create a flame in your hand. You can throw it at a creature within 30 feet, dealing 1d8 fire damage on a hit.",
-    "Sacred Flame": "A flame-like radiance descends upon a creature, dealing 1d8 radiant damage (Dex save for half).",
-    "Thaumaturgy": "You create a supernatural effect such as making your voice boom, flames flicker, or doors fly open. No damage.",
-    "Guidance": "You touch a creature, giving them a +1d4 bonus to a single ability check within the next minute.",
-    "Prestidigitation": "A minor magical trick that creates small sensory effects, cleans or soils objects, lights candles, or chills/warms nonliving material.",
-    "Ray of Frost": "A frigid beam of blue-white light strikes a creature, dealing 1d8 cold damage and reducing its speed by 10 feet until your next turn.",
-    "Eldritch Blast": "A beam of crackling energy strikes a creature, dealing 1d10 force damage on a hit.",
-    "Toll the Dead": "A creature hears a haunting bell. If it has missing hit points, it takes 1d12 necrotic damage (otherwise 1d8).",
-    "Shillelagh": "You imbue a wooden weapon with magic. It deals 1d8 damage and uses your spellcasting ability for attack rolls.",
-    "Thorn Whip": "You create a magical vine to lash out at a creature, dealing 1d6 piercing damage and pulling the target up to 10 feet closer.",
-    "Minor Illusion": "You create a sound or an image within range that lasts up to 1 minute.",
-    "Message": "You whisper a message to a target within 120 feet, and only they can hear the reply.",
-    "Light": "You touch an object, making it shine bright light for 20 feet and dim light for another 20 feet.",
-    "Chill Touch": "You create a ghostly skeletal hand that deals 1d8 necrotic damage and prevents healing until your next turn.",
-    "Friends": "For 1 minute, you have advantage on Charisma checks against a target, but they become hostile afterward.",
-    "Dancing Lights": "You create up to four floating lights that illuminate an area.",
-    "Mending": "You repair a broken object, restoring up to 1 foot of damage.",
-
     # ✅ 1ST-LEVEL SPELLS
     "Magic Missile": "Creates darts of magical force that hit automatically, dealing 1d4 + 1 force damage each.",
-    "Shield": "A magical force surrounds you, granting +5 AC for 1 round and negating Magic Missile's damage.",
+    "Shield": "A magical force surrounds you, granting +5 AC for 1 round.",
     "Mage Armor": "You touch a willing creature and protect them with magical armor, giving them 13 + Dexterity modifier AC for 8 hours.",
     "Burning Hands": "A cone of fire erupts from your hands, dealing 3d6 fire damage to creatures in a 15-foot cone (Dex save for half).",
     "Cure Wounds": "A creature you touch regains hit points equal to 1d8 + your spellcasting modifier.",
@@ -276,9 +257,38 @@ spells_descriptions = {
     "Thunderous Smite": "Your next melee attack deals extra 2d6 thunder damage and can push the target away (Strength save to resist).",
     "Expeditious Retreat": "You gain the ability to take the Dash action as a bonus action for up to 10 minutes.",
     "Fog Cloud": "You create a 20-foot-radius sphere of fog that heavily obscures the area.",
-    "Alarm": "You create a magical alarm that alerts you when a creature enters an area."
+    "Alarm": "You create a magical alarm that alerts you when a creature enters an area.",
+    "Hex": "You curse a creature. You deal an extra 1d6 necrotic damage to the target each time you hit it with an attack.",
+    "Armor of Agathys": "You gain temporary hit points and deal cold damage to attackers.",
+    "Hellish Rebuke": "You retaliate against a creature that damages you, dealing 2d10 fire damage.",
+    "Detect Evil and Good": "You sense aberrations, celestials, elementals, fey, fiends, or undead within 30 feet of you.",
+    "Cause Fear": "You cause a creature to become frightened of you for up to 1 minute (Wis save to resist).",
 }
 
+cantripps_descriptions = {
+    "Fire Bolt": "A beam of fire shoots toward a creature, dealing 1d10 fire damage on a hit.",
+    "Mage Hand": "Creates a spectral hand that can manipulate objects. It can't attack, open doors, or carry more than 10 pounds.",
+    "Vicious Mockery": "You unleash a string of insults. The target must succeed on a Wisdom saving throw or take 1d4 psychic damage and have disadvantage on its next attack roll.",
+    "Druidcraft": "You create a tiny, harmless sensory effect, such as changing the color of flowers or creating a puff of wind. No damage.",
+    "Produce Flame": "You create a flame in your hand. You can throw it at a creature within 30 feet, dealing 1d8 fire damage on a hit.",
+    "Sacred Flame": "A flame-like radiance descends upon a creature, dealing 1d8 radiant damage (Dex save for half).",
+    "Thaumaturgy": "You create a supernatural effect such as making your voice boom, flames flicker, or doors fly open. No damage.",
+    "Guidance": "You touch a creature, giving them a +1d4 bonus to a single ability check within the next minute.",
+    "Prestidigitation": "A minor magical trick that creates small sensory effects, cleans or soils objects, lights candles, or chills/warms nonliving material.",
+    "Ray of Frost": "A frigid beam of blue-white light strikes a creature, dealing 1d8 cold damage and reducing its speed by 10 feet until your next turn.",
+    "Eldritch Blast": "A beam of crackling energy strikes a creature, dealing 1d10 force damage on a hit.",
+    "Toll the Dead": "A creature hears a haunting bell. If it has missing hit points, it takes 1d12 necrotic damage (otherwise 1d8).",
+    "Shillelagh": "You imbue a wooden weapon with magic. It deals 1d8 damage and uses your spellcasting ability for attack rolls.",
+    "Thorn Whip": "You create a magical vine to lash out at a creature, dealing 1d6 piercing damage and pulling the target up to 10 feet closer.",
+    "Minor Illusion": "You create a sound or an image within range that lasts up to 1 minute.",
+    "Message": "You whisper a message to a target within 120 feet, and only they can hear the reply.",
+    "Light": "You touch an object, making it shine bright light for 20 feet and dim light for another 20 feet.",
+    "Chill Touch": "You create a ghostly skeletal hand that deals 1d8 necrotic damage and prevents healing until your next turn.",
+    "Friends": "For 1 minute, you have advantage on Charisma checks against a target, but they become hostile afterward.",
+    "Dancing Lights": "You create up to four floating lights that illuminate an area.",
+    "Mending": "You repair a broken object, restoring up to 1 foot of damage.",
+
+}
 
 
 
