@@ -13,6 +13,8 @@ class Character:
         self.skills = self.set_skills()
         self.trait = self.set_traits()
         self.char_spells= char_spells
+        self.inventory = generate_items()
+        
     
     def set_skills(self):
         """Spojí dovednosti z rasy, povolání a zázemí do jednoho seznamu."""
@@ -39,11 +41,6 @@ class Character:
             "Wisdom": roll_stat(),
             "Charisma": roll_stat(),
         }
-
-    def generate_inventory(self):
-        """Přidá základní vybavení podle povolání a zázemí."""
-        return self.char_class.starting_equipment + self.background.starting_equipment
-
     def __str__(self):
         """Vrací statblock postavy jako text."""
         stats = "\n".join(f"{key}: {value}" for key, value in self.stats.items())
@@ -289,3 +286,68 @@ cantripps_descriptions = {
     "Mending": "You repair a broken object, restoring up to 1 foot of damage.",
 
 }
+
+class Item:
+    def __init__(self, name, weight, value):
+        self.name = name
+        self.weight = weight
+        self.value = value
+    def describe(self):
+        return f"{self.name} - Weight: {self.weight} lbs, Value: {self.value} gp"
+    
+class Weapon(Item):
+    def __init__(self, name, weight, value, damage, weapon_type, reach=False):
+        super().__init__(name, weight, value)
+        self.damage = damage
+        self.weapon_type = weapon_type  # Např. "melee", "ranged"
+        self.reach = reach  # True, pokud má zbraň delší dosah
+    def describe(self):
+        reach_text = " (Reach)" if self.reach else ""
+        return f"{self.name} (Weapon) - {self.damage} damage, Type: {self.weapon_type}{reach_text}, Weight: {self.weight} lbs, Value: {self.value} gp"
+    
+# 🛡️ Brnění (Armor)
+class Armor(Item):
+    def __init__(self, name, weight, value, armor_class, armor_type):
+        super().__init__(name, weight, value)
+        self.armor_class = armor_class  # Bonus k AC
+        self.armor_type = armor_type  # "light", "medium", "heavy"
+
+    def describe(self):
+        return f"{self.name} (Armor) - AC: {self.armor_class}, Type: {self.armor_type}, Weight: {self.weight} lbs, Value: {self.value} gp"
+
+
+# 🧪 Lektvary (Potions)
+class Potion(Item):
+    def __init__(self, name, value, effect):
+        super().__init__(name, 0.5, value)  # Většina lektvarů je lehká
+        self.effect = effect
+    def use(self):
+        return f"You drink {self.name}. {self.effect}"
+
+    def describe(self):
+        return f"{self.name} (Potion) - Effect: {self.effect}, Value: {self.value} gp"
+
+
+# 🔮 Magické předměty (Magic Items)
+class MagicItem(Item):
+    def __init__(self, name, weight, value, special_effect):
+        super().__init__(name, weight, value)
+        self.special_effect = special_effect
+
+    def activate(self):
+        return f"{self.name} glows and {self.special_effect} happens!"
+
+    def describe(self):
+        return f"{self.name} (Magic Item) - Effect: {self.special_effect}, Weight: {self.weight} lbs, Value: {self.value} gp"
+
+
+def generate_items():
+    sword = Weapon("Longsword", 3, 15, "1d8 slashing", "melee")
+    bow = Weapon("Shortbow", 2, 25, "1d6 piercing", "ranged")
+    chainmail = Armor("Chainmail", 20, 75, 16, "medium")
+    healing_potion = Potion("Healing Potion", 50, "Restores 2d4+2 HP")
+    magic_ring = MagicItem("Ring of Invisibility", 0.1, 500, "makes you invisible for 1 minute")
+    return [sword, bow, chainmail, healing_potion, magic_ring]
+
+
+
