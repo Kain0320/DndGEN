@@ -1,22 +1,38 @@
-from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions, Item
-class_spells = spells_by_class
+from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions, Item, class_items, Potion, MagicItem, Weapon , Armor, potions_list, magic_items_list
 import random
 import textwrap
+import PyPDF2
+from reportlab.pdfgen import canvas
+
+
+class_spells = spells_by_class
+
 def choose_option(options, prompt):
     """Umožní uživateli vybrat možnost nebo zvolit náhodnou variantu."""
     print(prompt)
-    for i, option in enumerate(options, 1):
-        print(f"{i}. {option}")
+
+    # Pokud jsou v `options` objekty, získáme jejich názvy
+    if isinstance(options, dict):
+        options_list = list(options.values())
+    else:
+        options_list = options  # Pokud je už list, použijeme ho přímo
+
+    # Výpis možností s názvy místo paměťových adres
+    for i, option in enumerate(options_list, 1):
+        option_name = option.name if hasattr(option, "name") else str(option)
+        print(f"{i}. {option_name}")
     print("0. Random")
+
+    # Výběr uživatelem
     choice = input("Vyber možnost (zadej číslo): ")
     if choice == "0":
-        return random.choice(list(options.values()))
-    elif choice.isdigit() and 1 <= int(choice) <= len(options):
-        return list(options.values())[int(choice) - 1]
+        return random.choice(options_list)
+    elif choice.isdigit() and 1 <= int(choice) <= len(options_list):
+        return options_list[int(choice) - 1]
     else:
-        print("Neplatná volba, vybírám náhodně.")
-        return random.choice(list(options.values()))
-    
+        print("❌ Neplatná volba, vybírám náhodně.")
+        return random.choice(options_list)
+
 def choose_gender():
     options = ["Muž", "Žena"]
     print("Vyber pohlaví:")
@@ -81,9 +97,23 @@ def select_from_list(spell_list, limit):
             print("❌ Zadej číslo kouzla.")
 
     return selected
-    
+
+def generate_items(char_class_name):
+    items = []
+    if char_class_name in class_items:
+        class_item = class_items[char_class_name]
+        weapon = choose_option(class_item["weapons"], "Vyber zbraň:")
+        items.append(weapon)
+        if class_item["armor"]:
+            armor = choose_option(class_item["armor"], "Vyber brnění:")
+            items.append(armor)
+    potion = random.choice(potions_list)
+    magic_item = random.choice(magic_items_list)
+
+    return items  + [potion, magic_item]
 
 def generate_name(race, gender):
+
     """Umožní uživateli zadat vlastní jméno nebo vygeneruje náhodné."""
     user_input = input("Chceš zadat vlastní jméno? (ano/ne): ").strip().lower()
     if user_input == "ano":
@@ -99,7 +129,19 @@ def generate_name(race, gender):
         raise ValueError(f"Pohlaví '{gender}' není dostupné pro rasu '{race_name}'!")
 
     return random.choice(names[race_name][gender])
- 
+
+def set_ac(character):
+    """Nastaví AC (Armor Class) postavy na základě jejího vybavení."""
+    base_ac = 10 + calculate_stat_bonus(character.stats.get("Dexterity", 0))
+    
+    for item in character.inventory:
+        if isinstance(item, Armor):
+            base_ac = item.ac + calculate_stat_bonus(character.stats.get("Dexterity", 0))
+            break  # Předpokládáme, že postava má jen jedno brnění
+    def __str__ (self):
+        return f"{self.name, self.ac}"
+    return base_ac
+
 def generate_character():
     print("\n=== GENERÁTOR POSTAV D&D 5E ===\n")
 
@@ -111,7 +153,7 @@ def generate_character():
     
     skills = []  # Initialize skills
     traits = []  # Initialize traits
-    character = Character(name, race, char_class, background, hit_dice, skills, traits,)
+    character = Character(name, race, char_class, background, hit_dice, skills, traits, generate_items= generate_items)
     constitution_mod = character.stats.get("Constitution", 0)  # Modifikátor Constitution
     character.hit_dice, character.hp = calculate_hit_points(char_class, constitution_mod)
     skills = character.set_skills()
@@ -126,19 +168,13 @@ def generate_character():
     print(f"Skills: {skills}")
     print(f"Traits: {traits}")
     print(f"Spells: {character.spells}")
-    print(f"Inventory: {character.inventory}")
+    inventory_names = [item.name if hasattr(item, "name") else str(item) for item in character.inventory]
+    print(f"Inventory: {inventory_names}")
     return character
-
-
 #################PDFPRENOS#################
-import PyPDF2
-from reportlab.pdfgen import canvas
-
 def calculate_stat_bonus(stat_value):
     """Vypočítá bonus na základě hodnoty statu."""
     return (stat_value - 10) // 2
-
-
 def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
     """Vepíše data do existujícího D&D PDF sheetu."""
     
@@ -171,21 +207,36 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
         for line in wrapped_text:
             c.drawString(traits_x, traits_y, line)
             traits_y -= 10  # Posun dolů pro další řádek
+
     c.setFont("Helvetica", 13)
-    y_pos = 650
+    y_pos = 626
     x_pos = 43
     for stat, value in character.stats.items():
         c.drawString(40, y_pos, f"{value}")
-        y_pos -= 30
-    c.drawString(50, 250, "Inventory:")
-    item_y = 230
+        y_pos -= 73
+
+    c.drawString(267, 191, "Inventory:")
+    item_y = 181
     for item in character.inventory:
-        c.setFont("Helvetica", 10)
-        wrapped_item = textwrap.wrap(item.describe(), width=70)
+        c.setFont("Helvetica", 7)
+        wrapped_item = textwrap.wrap(item.describe(), width=40)
         for line in wrapped_item:
-            c.drawString(50, item_y, line)
+            c.drawString(267, item_y, line)
             item_y -= 10
         item_y -= 5
+
+    
+
+    for weapon in character.inventory:
+        if isinstance(weapon, Weapon):
+            c.drawString(329,392 , f"{weapon.damage}")
+            c.drawString(235, 392, f"{weapon.name}")
+    c.setFont("Helvetica", 15)
+    for armor in character.inventory:
+        if isinstance(armor, Armor):
+            
+            c.drawString(238, 640, f"{set_ac}")
+            
 
     c.showPage()
     c.showPage()

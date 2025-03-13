@@ -1,7 +1,6 @@
 import random
-
 class Character:
-    def __init__(self, name, race, char_class, background,hit_dice, skills=None,traits=None, char_spells=None):
+    def __init__(self, name, race, char_class, background,hit_dice, skills=None,traits=None, char_spells=None,inventory=None, generate_items=None):
         self.name = name
         self.race = race
         self.char_class = char_class
@@ -13,7 +12,8 @@ class Character:
         self.skills = self.set_skills()
         self.trait = self.set_traits()
         self.char_spells= char_spells
-        self.inventory = generate_items()
+        self.inventory = generate_items(self.char_class.name)
+        
         
     
     def set_skills(self):
@@ -24,9 +24,7 @@ class Character:
     
     def set_traits(self):
         race_traits = self.race.traits if isinstance(self.race.traits, list) else [self.race.traits]
-        return race_traits
-
-                                                                                                     
+        return race_traits                                                                                      
     def generate_stats(self):
         """Generuje šest hlavních atributů (hod kostkami 4k6, nejnižší se zahodí)."""
         def roll_stat():
@@ -261,7 +259,6 @@ spells_descriptions = {
     "Detect Evil and Good": "You sense aberrations, celestials, elementals, fey, fiends, or undead within 30 feet of you.",
     "Cause Fear": "You cause a creature to become frightened of you for up to 1 minute (Wis save to resist).",
 }
-
 cantripps_descriptions = {
     "Fire Bolt": "A beam of fire shoots toward a creature, dealing 1d10 fire damage on a hit.",
     "Mage Hand": "Creates a spectral hand that can manipulate objects. It can't attack, open doors, or carry more than 10 pounds.",
@@ -293,61 +290,105 @@ class Item:
         self.weight = weight
         self.value = value
     def describe(self):
-        return f"{self.name} - Weight: {self.weight} lbs, Value: {self.value} gp"
-    
+        return f"{self.name} - Weight: {self.weight} lbs, Value: {self.value} gp"    
 class Weapon(Item):
     def __init__(self, name, weight, value, damage, weapon_type, reach=False):
         super().__init__(name, weight, value)
         self.damage = damage
         self.weapon_type = weapon_type  # Např. "melee", "ranged"
         self.reach = reach  # True, pokud má zbraň delší dosah
+    def __str__(self):
+        return f"{self.name} ({self.damage})"
     def describe(self):
         reach_text = " (Reach)" if self.reach else ""
         return f"{self.name} (Weapon) - {self.damage} damage, Type: {self.weapon_type}{reach_text}, Weight: {self.weight} lbs, Value: {self.value} gp"
-    
-# 🛡️ Brnění (Armor)
 class Armor(Item):
     def __init__(self, name, weight, value, armor_class, armor_type):
         super().__init__(name, weight, value)
         self.armor_class = armor_class  # Bonus k AC
         self.armor_type = armor_type  # "light", "medium", "heavy"
+    def __str__(self):
+        return f"{self.name} ({self.armor_class})"
 
     def describe(self):
         return f"{self.name} (Armor) - AC: {self.armor_class}, Type: {self.armor_type}, Weight: {self.weight} lbs, Value: {self.value} gp"
-
-
-# 🧪 Lektvary (Potions)
 class Potion(Item):
     def __init__(self, name, value, effect):
         super().__init__(name, 0.5, value)  # Většina lektvarů je lehká
         self.effect = effect
-    def use(self):
-        return f"You drink {self.name}. {self.effect}"
-
     def describe(self):
         return f"{self.name} (Potion) - Effect: {self.effect}, Value: {self.value} gp"
-
-
-# 🔮 Magické předměty (Magic Items)
+    def __str__(self):
+        return f"{self.name} ({self.effect})"
 class MagicItem(Item):
     def __init__(self, name, weight, value, special_effect):
         super().__init__(name, weight, value)
         self.special_effect = special_effect
-
-    def activate(self):
-        return f"{self.name} glows and {self.special_effect} happens!"
-
+    def __str__(self):
+        return f"{self.name} ({self.effect})"
     def describe(self):
         return f"{self.name} (Magic Item) - Effect: {self.special_effect}, Weight: {self.weight} lbs, Value: {self.value} gp"
-
-
-def generate_items():
-    sword = Weapon("Longsword", 3, 15, "1d8 slashing", "melee")
-    bow = Weapon("Shortbow", 2, 25, "1d6 piercing", "ranged")
-    chainmail = Armor("Chainmail", 20, 75, 16, "medium")
-    healing_potion = Potion("Healing Potion", 50, "Restores 2d4+2 HP")
-    magic_ring = MagicItem("Ring of Invisibility", 0.1, 500, "makes you invisible for 1 minute")
-    return [sword, bow, chainmail, healing_potion, magic_ring]
-
-
-
+class_items = {
+    "Fighter": {
+        "weapons": [Weapon("Longsword", 3, 15, "1d8 slashing", "melee"), Weapon("Greatsword", 6, 50, "2d6 slashing", "melee")],
+        "armor": [Armor("Chainmail", 20, 75, 16, "medium"), Armor("Plate", 65, 1500, 18, "heavy")]
+    },
+    "Wizard": {
+        "weapons": [Weapon("Dagger", 1, 2, "1d4 piercing", "melee"), Weapon("Quarterstaff", 4, 0.2, "1d6 bludgeoning", "melee")],
+        "armor": []
+    },
+    "Rogue": {
+        "weapons": [Weapon("Dagger", 1, 2, "1d4 piercing", "melee"), Weapon("Shortsword", 2, 10, "1d6 piercing", "melee")],
+        "armor": [Armor("Leather", 10, 10, 11, "light")]
+    },
+    "Cleric": {
+        "weapons": [Weapon("Mace", 4, 5, "1d6 bludgeoning", "melee"), Weapon("Warhammer", 2, 15, "1d8 bludgeoning", "melee")],
+        "armor": [Armor("Chainmail", 20, 75, 16, "medium"), Armor("Shield", 6, 10, 2, "shield")]
+    },
+    "Bard": {
+        "weapons": [Weapon("Rapier", 2, 25, "1d8 piercing", "melee"), Weapon("Shortsword", 2, 10, "1d6 piercing", "melee")],
+        "armor": [Armor("Leather", 10, 10, 11, "light")]
+    },
+    "Ranger": {
+        "weapons": [Weapon("Longbow", 2, 50, "1d8 piercing", "ranged"), Weapon("Shortsword", 2, 10, "1d6 piercing", "melee")],
+        "armor": [Armor("Leather", 10, 10, 11, "light"), Armor("Studded Leather", 13, 45, 12, "light")]
+    },
+    "Barbarian": {
+        "weapons": [Weapon("Greataxe", 7, 30, "1d12 slashing", "melee"), Weapon("Handaxe", 2, 5, "1d6 slashing", "melee")],
+        "armor": [Armor("Unarmored", 0, 0, 10, "none")]
+    },
+    "Sorcerer": {
+        "weapons": [Weapon("Dagger", 1, 2, "1d4 piercing", "melee"), Weapon("Quarterstaff", 4, 0.2, "1d6 bludgeoning", "melee")],
+        "armor": []
+    },
+    "Monk": {
+        "weapons": [Weapon("Shortsword", 2, 10, "1d6 piercing", "melee"), Weapon("Quarterstaff", 4, 0.2, "1d6 bludgeoning", "melee")],
+        "armor": [Armor("Unarmored", 0, 0, 10, "none")]
+    },
+    "Paladin": {
+        "weapons": [Weapon("Longsword", 3, 15, "1d8 slashing", "melee"), Weapon("Warhammer", 2, 15, "1d8 bludgeoning", "melee")],
+        "armor": [Armor("Chainmail", 20, 75, 16, "medium"), Armor("Shield", 6, 10, 2, "shield")]
+    },
+    "Druid": {
+        "weapons": [Weapon("Scimitar", 3, 25, "1d6 slashing", "melee"), Weapon("Quarterstaff", 4, 0.2, "1d6 bludgeoning", "melee")],
+        "armor": [Armor("Leather", 10, 10, 11, "light"), Armor("Hide", 12, 10, 12, "medium")]
+    },
+    "Warlock": {
+        "weapons": [Weapon("Dagger", 1, 2, "1d4 piercing", "melee"), Weapon("Quarterstaff", 4, 0.2, "1d6 bludgeoning", "melee")],
+        "armor": [Armor("Leather", 10, 10, 11, "light")]
+    }
+}
+potions_list = [
+    Potion("Healing Potion",  10 , "Restores 2d4+2 HP",),
+    Potion("Antidote", 10, "Cures one poison effect"),
+    Potion("Potion of Climbing",10, "Advantage on climbing checks for 1 hour"),
+    Potion("Potion of Resistance",10, "Resist one random damage type for 10 min"),
+    Potion("Potion of Night Vision",10, "Gain darkvision (18m) for 1 hour"),   
+]
+magic_items_list = [
+    MagicItem("Amulet of Protection", 0.5, 20, "+1 AC for 1 hour"),
+    MagicItem("Ring of Minor Invisibility",0.1,35, "Turn invisible for 1 minute (1/day)"),
+    MagicItem("Wand of Sparks",0.2,20, "Shoot a small electric bolt (1d4 lightning, 3/day)"),
+    MagicItem("Feather Token",0.1, 25, "Activate Feather Fall once per day"),
+    MagicItem("Ring of Mind Read ",0.1,300, "Read surface thoughts of a creature (1/day)"),
+]
