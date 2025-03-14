@@ -13,6 +13,8 @@ class Character:
         self.trait = self.set_traits()
         self.char_spells= char_spells
         self.inventory = generate_items(self.char_class.name)
+        self.features = []  # Initialize features as an empty list
+        
         
         
     
@@ -24,7 +26,7 @@ class Character:
     
     def set_traits(self):
         race_traits = self.race.traits if isinstance(self.race.traits, list) else [self.race.traits]
-        return race_traits                                                                                      
+        return race_traits                       
     def generate_stats(self):
         """Generuje šest hlavních atributů (hod kostkami 4k6, nejnižší se zahodí)."""
         def roll_stat():
@@ -76,6 +78,50 @@ class Class:
         self.hit_dice = hit_dice  # Např. "1d10"
         self.skills = skills  # Seznam dovedností pro povolání
         self.starting_equipment = starting_equipment  # Počáteční vybavení
+    
+    def apply_class_bonus(self, character):
+        """Aplikuje unikátní bonusy podle třídy."""
+        if self.name == "Barbarian":
+            dex_bonus = (character.stats.get("Dexterity", 10) - 10) // 2
+            con_bonus = (character.stats.get("Constitution", 10) - 10) // 2
+            character.ac = 10 + dex_bonus + con_bonus
+            character.features.append("Unarmored Defense: AC = 10 + Dex + Con")
+
+        elif self.name == "Monk":
+            dex_bonus = (character.stats.get("Dexterity", 10) - 10) // 2
+            wis_bonus = (character.stats.get("Wisdom", 10) - 10) // 2
+            character.ac = 10 + dex_bonus + wis_bonus
+            character.features.append("Unarmored Defense: AC = 10 + Dex + Wis")
+
+        elif self.name == "Rogue":
+            character.features.append("Sneak Attack: +1d6 extra damage, when attacking with advantage")
+
+        elif self.name == "Fighter":
+            character.features.append("Fighting Style: Choose one (Defense, Archery, Dueling)")
+
+        elif self.name == "Wizard":
+            character.features.append("Arcane Recovery: Recover spell slots after a short rest")
+
+        elif self.name == "Paladin":
+            character.features.append("Divine Sense: Detect celestial, fiend, and undead within 60ft"),("Lay on Hands: Heal 5x Paladin level HP once per day")
+
+        elif self.name == "Druid":
+            character.features.append("Druidic Language: Secret language known only to druids"),("Wild Shape: Transform into a beast")
+
+        elif self.name == "Ranger":
+            character.features.append("Favored Enemy: Gain advantage on survival checks vs chosen enemy")
+
+        elif self.name == "Sorcerer":
+            character.features.append("Font of Magic: Gain sorcery points for metamagic")
+
+        elif self.name == "Bard":
+            character.features.append("Bardic Inspiration: Grant 1d6 bonus to an ally’s roll")
+
+        elif self.name == "Cleric":
+            character.features.append("Divine Domain: Gain extra spells based on chosen deity")
+
+        elif self.name == "Warlock":
+            character.features.append("Pact Magic: Unique spellcasting system based on patron’s power")
        
 classes = {
     "Fighter": Class("Fighter", "1d10", ["Longsword", "Shield"], ["Athletics", "Intimidation"]),
@@ -303,15 +349,15 @@ class Weapon(Item):
         reach_text = " (Reach)" if self.reach else ""
         return f"{self.name} (Weapon) - {self.damage} damage, Type: {self.weapon_type}{reach_text}, Weight: {self.weight} lbs, Value: {self.value} gp"
 class Armor(Item):
-    def __init__(self, name, weight, value, armor_class, armor_type):
+    def __init__(self, name, weight, value, ac, armor_type):
         super().__init__(name, weight, value)
-        self.armor_class = armor_class  # Bonus k AC
+        self.ac = ac
         self.armor_type = armor_type  # "light", "medium", "heavy"
     def __str__(self):
         return f"{self.name} ({self.armor_class})"
 
     def describe(self):
-        return f"{self.name} (Armor) - AC: {self.armor_class}, Type: {self.armor_type}, Weight: {self.weight} lbs, Value: {self.value} gp"
+        return f"{self.name} (Armor) - AC: {self.ac}, Type: {self.armor_type}, Weight: {self.weight} lbs, Value: {self.value} gp"
 class Potion(Item):
     def __init__(self, name, value, effect):
         super().__init__(name, 0.5, value)  # Většina lektvarů je lehká

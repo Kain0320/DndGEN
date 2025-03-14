@@ -132,15 +132,16 @@ def generate_name(race, gender):
 
 def set_ac(character):
     """Nastaví AC (Armor Class) postavy na základě jejího vybavení."""
-    base_ac = 10 + calculate_stat_bonus(character.stats.get("Dexterity", 0))
-    
+    dex_bonus = calculate_stat_bonus(character.stats.get("Dexterity", 0))
+    base_ac = 10 + dex_bonus  # Základní AC bez brnění
     for item in character.inventory:
         if isinstance(item, Armor):
-            base_ac = item.ac + calculate_stat_bonus(character.stats.get("Dexterity", 0))
-            break  # Předpokládáme, že postava má jen jedno brnění
-    def __str__ (self):
-        return f"{self.name, self.ac}"
-    return base_ac
+            if item.armor_type == "heavy":
+                return item.ac  # Těžké brnění ignoruje bonus za obratnost
+            else:
+                return item.ac + dex_bonus  # Přidá bonus za obratnost pro lehké/střední brnění
+
+    return base_ac  # Pokud není žádné brnění, vrátí základní AC
 
 def generate_character():
     print("\n=== GENERÁTOR POSTAV D&D 5E ===\n")
@@ -159,6 +160,8 @@ def generate_character():
     skills = character.set_skills()
     traits = character.set_traits()
     character.spells = select_spells(char_class)
+    char_class.apply_class_bonus(character)
+
     
 
     print("\n=== VYTVOŘENÁ POSTAVA ===")
@@ -170,6 +173,8 @@ def generate_character():
     print(f"Spells: {character.spells}")
     inventory_names = [item.name if hasattr(item, "name") else str(item) for item in character.inventory]
     print(f"Inventory: {inventory_names}")
+    print(f"AC: {set_ac(character)}")
+    print(f"Features: {character.features}")
     return character
 #################PDFPRENOS#################
 def calculate_stat_bonus(stat_value):
@@ -197,13 +202,14 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
             x, y = skill_positions[skill]
             c.drawString(x, y, "•")  # Přidáme tečku
 
-    c.setFont("Helvetica", 9)
+    c.setFont("Helvetica-Bold", 10)
     traits_x = 412  # X souřadnice
     traits_y = 394  # Začátek seznamu vlastností
     # ✅ Vykreslení traits (vlastností)
     for trait in character.set_traits():
         description = trait_descriptions.get(trait, "Neznámá vlastnost.")  
         wrapped_text = textwrap.wrap(f"• {trait}: {description}", width=30)  # Zalamování textu
+        c.setFont("Helvetica", 9)
         for line in wrapped_text:
             c.drawString(traits_x, traits_y, line)
             traits_y -= 10  # Posun dolů pro další řádek
@@ -225,17 +231,17 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
             item_y -= 10
         item_y -= 5
 
-    
-
     for weapon in character.inventory:
         if isinstance(weapon, Weapon):
             c.drawString(329,392 , f"{weapon.damage}")
             c.drawString(235, 392, f"{weapon.name}")
+
     c.setFont("Helvetica", 15)
+
     for armor in character.inventory:
         if isinstance(armor, Armor):
-            
-            c.drawString(238, 640, f"{set_ac}")
+            ac_value = set_ac(character)  # Calculate the armor class
+            c.drawString(238, 636, f"{ac_value}")
             
 
     c.showPage()
