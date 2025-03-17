@@ -33,14 +33,32 @@ class Character:
             rolls = [random.randint(1, 6) for _ in range(4)]
             return sum(sorted(rolls)[1:])  # Sečte 3 nejvyšší hody
 
-        return {
-            "Strength": roll_stat(),
-            "Dexterity": roll_stat(),
-            "Constitution": roll_stat(),
-            "Intelligence": roll_stat(),
-            "Wisdom": roll_stat(),
-            "Charisma": roll_stat(),
+        stats = [roll_stat() for _ in range(6)]
+        stats.sort(reverse=True)  
+        primary_atributes = {
+        "Fighter": ["Strength", "Constitution"],
+        "Wizard": ["Intelligence", "Dexterity"],
+        "Rogue": ["Dexterity", "Charisma"],
+        "Cleric": ["Wisdom", "Strength"],
+        "Bard": ["Charisma", "Dexterity"],
+        "Ranger": ["Dexterity", "Wisdom"],
+        "Barbarian": ["Strength", "Constitution"],
+        "Sorcerer": ["Charisma", "Constitution"],
+        "Monk": ["Dexterity", "Wisdom"],
+        "Paladin": ["Strength", "Charisma"],
+        "Druid": ["Wisdom", "Constitution"],
+        "Warlock": ["Charisma", "Wisdom"],
         }
+        class_name = self.char_class.name
+        primary = primary_atributes.get(class_name, [])
+        attributes = {"Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"}
+        stats_dict = {attr:0 for attr in attributes}
+        for attr in primary:
+            stats_dict[attr] = stats.pop(0)
+        for attr in attributes:
+            if stats_dict[attr] == 0:
+                stats_dict[attr] = stats.pop(0)
+        return stats_dict
     def __str__(self):
         """Vrací statblock postavy jako text."""
         stats = "\n".join(f"{key}: {value}" for key, value in self.stats.items())
@@ -85,28 +103,35 @@ class Class:
             dex_bonus = (character.stats.get("Dexterity", 10) - 10) // 2
             con_bonus = (character.stats.get("Constitution", 10) - 10) // 2
             character.ac = 10 + dex_bonus + con_bonus
-            character.features.append("Unarmored Defense: AC = 10 + Dex + Con")
+            character.features.append("Unarmored Defense: AC = 10 + Dex + Con"),("Rage -  (2/day)")
 
         elif self.name == "Monk":
             dex_bonus = (character.stats.get("Dexterity", 10) - 10) // 2
             wis_bonus = (character.stats.get("Wisdom", 10) - 10) // 2
             character.ac = 10 + dex_bonus + wis_bonus
-            character.features.append("Unarmored Defense: AC = 10 + Dex + Wis")
+            character.features.append("Unarmored Defense: AC = 10 + Dex + Wis"), 
+            character.features.append("Martial Arts (1d6 unarmed attacks, bonus attack(bonus action) after attack with weapon)")
 
         elif self.name == "Rogue":
             character.features.append("Sneak Attack: +1d6 extra damage, when attacking with advantage")
+            character.features.append("Thieves' Cant: Secret language known only to rogues")
 
         elif self.name == "Fighter":
-            character.features.append("Fighting Style: Choose one (Defense, Archery, Dueling)")
+            fighting_styles = ["Defense", "Archery", "Dueling", "Great Weapon Fighting", "Protection", "Two-Weapon Fighting"]
+            chosen_style = random.choice(fighting_styles)
+            character.features.append(f"Fighting Style: {chosen_style})")
+            character.features.append("Second Wind (regain 1d10+1 h.p.)")
 
         elif self.name == "Wizard":
             character.features.append("Arcane Recovery: Recover spell slots after a short rest")
 
         elif self.name == "Paladin":
-            character.features.append("Divine Sense: Detect celestial, fiend, and undead within 60ft"),("Lay on Hands: Heal 5x Paladin level HP once per day")
+            character.features.append("Divine Sense: Detect celestial, fiend, and undead within 60ft"),
+            character.features.append("Lay on Hands: Heal 5x Paladin level HP once per day")
 
         elif self.name == "Druid":
-            character.features.append("Druidic Language: Secret language known only to druids"),("Wild Shape: Transform into a beast")
+            character.features.append("Druidic Language: Secret language known only to druids"),
+            character.features.append("Wild Shape: Transform into a beast")
 
         elif self.name == "Ranger":
             character.features.append("Favored Enemy: Gain advantage on survival checks vs chosen enemy")
@@ -122,6 +147,10 @@ class Class:
 
         elif self.name == "Warlock":
             character.features.append("Pact Magic: Unique spellcasting system based on patron’s power")
+path_classy = {
+    "Cleric": ["Life Domain", "Death Domain", "Knowledge Domain", "Nature Domain"],
+    "Wizard": ["Evocation", "Conjuration", "Necromancy", "Abjuration"]
+}
        
 classes = {
     "Fighter": Class("Fighter", "1d10", ["Longsword", "Shield"], ["Athletics", "Intimidation"]),
@@ -389,7 +418,7 @@ class_items = {
     },
     "Cleric": {
         "weapons": [Weapon("Mace", 4, 5, "1d6 bludgeoning", "melee"), Weapon("Warhammer", 2, 15, "1d8 bludgeoning", "melee")],
-        "armor": [Armor("Chainmail", 20, 75, 16, "medium"), Armor("Shield", 6, 10, 2, "shield")]
+        "armor": [Armor("Chainmail", 20, 75, 16, "medium")]
     },
     "Bard": {
         "weapons": [Weapon("Rapier", 2, 25, "1d8 piercing", "melee"), Weapon("Shortsword", 2, 10, "1d6 piercing", "melee")],
@@ -401,7 +430,7 @@ class_items = {
     },
     "Barbarian": {
         "weapons": [Weapon("Greataxe", 7, 30, "1d12 slashing", "melee"), Weapon("Handaxe", 2, 5, "1d6 slashing", "melee")],
-        "armor": [Armor("Unarmored", 0, 0, 10, "none")]
+        "armor": []
     },
     "Sorcerer": {
         "weapons": [Weapon("Dagger", 1, 2, "1d4 piercing", "melee"), Weapon("Quarterstaff", 4, 0.2, "1d6 bludgeoning", "melee")],
@@ -409,7 +438,7 @@ class_items = {
     },
     "Monk": {
         "weapons": [Weapon("Shortsword", 2, 10, "1d6 piercing", "melee"), Weapon("Quarterstaff", 4, 0.2, "1d6 bludgeoning", "melee")],
-        "armor": [Armor("Unarmored", 0, 0, 10, "none")]
+        "armor": []
     },
     "Paladin": {
         "weapons": [Weapon("Longsword", 3, 15, "1d8 slashing", "melee"), Weapon("Warhammer", 2, 15, "1d8 bludgeoning", "melee")],
@@ -438,3 +467,5 @@ magic_items_list = [
     MagicItem("Feather Token",0.1, 25, "Activate Feather Fall once per day"),
     MagicItem("Ring of Mind Read ",0.1,300, "Read surface thoughts of a creature (1/day)"),
 ]
+     
+     

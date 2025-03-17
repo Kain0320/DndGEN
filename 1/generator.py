@@ -1,4 +1,4 @@
-from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions, Item, class_items, Potion, MagicItem, Weapon , Armor, potions_list, magic_items_list
+from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions, Item, class_items, Potion, MagicItem, Weapon , Armor, potions_list, magic_items_list, path_classy
 import random
 import textwrap
 import PyPDF2
@@ -112,6 +112,11 @@ def generate_items(char_class_name):
 
     return items  + [potion, magic_item]
 
+def generate_path(char_class_name):
+    if char_class_name in path_classy:
+        path = choose_option(path_classy[char_class_name], "Vyber podclassu:")
+        return path
+
 def generate_name(race, gender):
 
     """Umožní uživateli zadat vlastní jméno nebo vygeneruje náhodné."""
@@ -134,6 +139,12 @@ def set_ac(character):
     """Nastaví AC (Armor Class) postavy na základě jejího vybavení."""
     dex_bonus = calculate_stat_bonus(character.stats.get("Dexterity", 0))
     base_ac = 10 + dex_bonus  # Základní AC bez brnění
+    if character.char_class.name == "Monk":
+        wis_bonus = calculate_stat_bonus(character.stats.get("Wisdom", 0))
+        base_ac += wis_bonus
+    elif character.char_class.name == "Barbarian":
+        con_bonus = calculate_stat_bonus(character.stats.get("Constitution", 0))
+        base_ac += con_bonus
     for item in character.inventory:
         if isinstance(item, Armor):
             if item.armor_type == "heavy":
@@ -161,6 +172,8 @@ def generate_character():
     traits = character.set_traits()
     character.spells = select_spells(char_class)
     char_class.apply_class_bonus(character)
+    character.path = generate_path(char_class.name) if char_class.name in path_classy else None
+
 
     
 
@@ -175,6 +188,7 @@ def generate_character():
     print(f"Inventory: {inventory_names}")
     print(f"AC: {set_ac(character)}")
     print(f"Features: {character.features}")
+    print(f"Path: {character.path}")
     return character
 #################PDFPRENOS#################
 def calculate_stat_bonus(stat_value):
