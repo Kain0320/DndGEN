@@ -3,9 +3,11 @@ import random
 import textwrap
 import PyPDF2
 import os
+import tkinter as tk
+from tkinter import Label, Button
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
-from PIL import Image
+from PIL import Image, ImageTk
 
 
 
@@ -116,46 +118,72 @@ def generate_items(char_class_name):
 
     return items  + [potion, magic_item]
 
-def choose_portrait(race):
-    """Umožní hráči vybrat portrét se zobrazením náhledu."""
+def choose_portrait_gui(race):
+    """GUI pro výběr portrétu postavy podle rasy."""
     portraits_dir = "portraits"
-    race_dir = os.path.join(portraits_dir, race)
+    race_dir = os.path.join(portraits_dir, race.name)
 
     if not os.path.exists(race_dir) or not os.path.isdir(race_dir):
-        print(f"⚠️ Složka pro rasu {race} neexistuje! Vyberu generický portrét.")
+        print(f"⚠️ Složka pro rasu {race} neexistuje! Použiji výchozí portrét.")
         return "portraits/default.png"
 
     portrait_files = [f for f in os.listdir(race_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
-
     if not portrait_files:
-        print(f"⚠️ Žádné portréty pro rasu {race}! Vyberu generický.")
+        print(f"⚠️ Žádné portréty pro rasu {race}! Použiji výchozí.")
         return "portraits/default.png"
 
-    while True:
-        print(f"\nVyber portrét pro {race}:")
-        for i, file in enumerate(portrait_files, 1):
-            print(f"{i}. {file}")
-        print("0. Náhodný výběr")
+    # Tkinter okno
+    root = tk.Tk()
+    root.title(f"Výběr portrétu pro {race}")
 
-        choice = input("Zadej číslo portrétu: ").strip()
-        
-        if choice == "0":
-            selected_file = random.choice(portrait_files)
-        elif choice.isdigit() and 1 <= int(choice) <= len(portrait_files):
-            selected_file = portrait_files[int(choice) - 1]
-        else:
-            print("❌ Neplatná volba, zkus znovu.")
-            continue
+    # Proměnná pro aktuální index obrázku
+    index = tk.IntVar(value=0)
 
-        portrait_path = os.path.join(race_dir, selected_file)
+    def update_image():
+        """Aktualizuje zobrazený obrázek."""
+        img_path = os.path.join(race_dir, portrait_files[index.get()])
+        img = Image.open(img_path)
+        img = img.resize((300, 400))  # Nastaví velikost
+        img_tk = ImageTk.PhotoImage(img)
+        image_label.config(image=img_tk)
+        image_label.image = img_tk  # Uchová referenci, jinak se obrázek nezobrazí
 
-        # Otevře a zobrazí obrázek
-        img = Image.open(portrait_path)
-        img.show()
+    def next_image():
+        """Posune výběr na další obrázek."""
+        index.set((index.get() + 1) % len(portrait_files))
+        update_image()
 
-        confirm = input("Líbí se ti tento portrét? (ano/ne): ").strip().lower()
-        if confirm == "ano":
-            return portrait_path
+    def prev_image():
+        """Posune výběr na předchozí obrázek."""
+        index.set((index.get() - 1) % len(portrait_files))
+        update_image()
+
+    def select_image():
+        """Uzavře GUI a vrátí vybraný obrázek."""
+        root.selected_portrait = os.path.join(race_dir, portrait_files[index.get()])
+        root.destroy()
+
+    # Náhled obrázku
+    image_label = Label(root)
+    image_label.pack()
+
+    # Tlačítka
+    prev_button = Button(root, text="⬅️ Předchozí", command=prev_image)
+    prev_button.pack(side="left", padx=10)
+
+    select_button = Button(root, text="✅ Vybrat", command=select_image)
+    select_button.pack(side="left", padx=10)
+
+    next_button = Button(root, text="➡️ Další", command=next_image)
+    next_button.pack(side="left", padx=10)
+
+    # Inicializace první fotky
+    update_image()
+
+    # Spustí GUI a čeká na výběr
+    root.mainloop()
+
+    return getattr(root, "selected_portrait", "portraits/default.png")
 
     
 def generate_path(char_class_name):
@@ -208,7 +236,7 @@ def generate_character():
     background = choose_option(backgrounds, "Vyber zázemí:")
     gender = choose_gender()
     name = generate_name(race, gender)
-    portrait = choose_portrait(race.name)
+    portrait = choose_portrait_gui(race)
 
     
     skills = []  # Initialize skills
