@@ -2,7 +2,11 @@ from base import races, Class, backgrounds, Character, classes, hit_dice, names,
 import random
 import textwrap
 import PyPDF2
+import os
 from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
+from PIL import Image
+
 
 
 class_spells = spells_by_class
@@ -112,6 +116,48 @@ def generate_items(char_class_name):
 
     return items  + [potion, magic_item]
 
+def choose_portrait(race):
+    """Umožní hráči vybrat portrét se zobrazením náhledu."""
+    portraits_dir = "portraits"
+    race_dir = os.path.join(portraits_dir, race)
+
+    if not os.path.exists(race_dir) or not os.path.isdir(race_dir):
+        print(f"⚠️ Složka pro rasu {race} neexistuje! Vyberu generický portrét.")
+        return "portraits/default.png"
+
+    portrait_files = [f for f in os.listdir(race_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
+
+    if not portrait_files:
+        print(f"⚠️ Žádné portréty pro rasu {race}! Vyberu generický.")
+        return "portraits/default.png"
+
+    while True:
+        print(f"\nVyber portrét pro {race}:")
+        for i, file in enumerate(portrait_files, 1):
+            print(f"{i}. {file}")
+        print("0. Náhodný výběr")
+
+        choice = input("Zadej číslo portrétu: ").strip()
+        
+        if choice == "0":
+            selected_file = random.choice(portrait_files)
+        elif choice.isdigit() and 1 <= int(choice) <= len(portrait_files):
+            selected_file = portrait_files[int(choice) - 1]
+        else:
+            print("❌ Neplatná volba, zkus znovu.")
+            continue
+
+        portrait_path = os.path.join(race_dir, selected_file)
+
+        # Otevře a zobrazí obrázek
+        img = Image.open(portrait_path)
+        img.show()
+
+        confirm = input("Líbí se ti tento portrét? (ano/ne): ").strip().lower()
+        if confirm == "ano":
+            return portrait_path
+
+    
 def generate_path(char_class_name):
     if char_class_name in path_classy:
         path = choose_option(path_classy[char_class_name], "Vyber podclassu:")
@@ -162,6 +208,8 @@ def generate_character():
     background = choose_option(backgrounds, "Vyber zázemí:")
     gender = choose_gender()
     name = generate_name(race, gender)
+    portrait = choose_portrait(race.name)
+
     
     skills = []  # Initialize skills
     traits = []  # Initialize traits
@@ -173,6 +221,7 @@ def generate_character():
     character.spells = select_spells(char_class)
     char_class.apply_class_bonus(character)
     character.path = generate_path(char_class.name) if char_class.name in path_classy else None
+    character.portrait = portrait
 
 
     
@@ -194,12 +243,23 @@ def generate_character():
 def calculate_stat_bonus(stat_value):
     """Vypočítá bonus na základě hodnoty statu."""
     return (stat_value - 10) // 2
+
 def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
     """Vepíše data do existujícího D&D PDF sheetu."""
     
     # Vytvoříme overlay s textem
     overlay_pdf = "overlay.pdf"
     c = canvas.Canvas(overlay_pdf)
+
+
+    portrait_x = 32
+    portrait_y = 40
+    portrait_width = 170
+    portrait_height = 130
+    try:
+        c.drawImage(ImageReader(character.portrait), portrait_x, portrait_y, width=portrait_width, height=portrait_height)
+    except:
+        print("❌ Chyba při načítání obrázku!")
     
     # Pozice závisí na konkrétním PDF 
     c.setFont("Helvetica-Bold", 14)
