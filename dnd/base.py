@@ -468,3 +468,5 @@ magic_items_list = [
     MagicItem("Ring of Mind Read ",0.1,300, "Read surface thoughts of a creature (1/day)"),
 ]
 
+
+

@@ -8,6 +8,8 @@ from tkinter import Label, Button
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from PIL import Image, ImageTk
+
+
 class_spells = spells_by_class
 
 
@@ -443,3 +445,5 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
 # Příklad použití
 character = generate_character()
 fill_character_sheet("/Users/user/DNDGEN/DndGEN/dnd/dnd_character_sheet.pdf", "character_sheet_filled.pdf", character, class_spell_slots[character.char_class.name])
+
+
