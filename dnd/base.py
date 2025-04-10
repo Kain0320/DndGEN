@@ -151,6 +151,29 @@ path_classy = {
     "Cleric": ["Life Domain", "Death Domain", "Knowledge Domain", "Nature Domain"],
     "Wizard": ["Evocation", "Conjuration", "Necromancy", "Abjuration"]
 }
+
+class_saving_throws = {
+    "Fighter": ["Strength", "Constitution"],
+    "Wizard": ["Intelligence", "Wisdom"],
+    "Rogue": ["Dexterity", "Intelligence"],
+    "Cleric": ["Wisdom", "Charisma"],
+    "Bard": ["Charisma", "Dexterity"],
+    "Ranger": ["Dexterity", "Intelligence"],
+    "Barbarian": ["Strength", "Constitution"],
+    "Sorcerer": ["Charisma", "Constitution"],
+    "Monk": ["Dexterity", "Strength"],
+    "Paladin": ["Strength", "Charisma"],
+    "Druid": ["Wisdom", "Intelligence"],
+    "Warlock": ["Charisma", "Wisdom"],
+}
+saving_throw_positions = {
+    "Strength": (102, 577),
+    "Dexterity": (102, 564),
+    "Constitution": (102, 550),
+    "Intelligence": (102, 536),
+    "Wisdom": (102, 522),
+    "Charisma": (102, 508)
+}
        
 classes = {
     "Fighter": Class("Fighter", "1d10", ["Longsword", "Shield"], ["Athletics", "Intimidation"]),
@@ -263,6 +286,14 @@ skill_positions = {
         "Stealth": (102, 246),
         "Survival": (102, 233)
     }
+stats_positions = {
+    "Strength": 625,
+    "Dexterity": 552,
+    "Constitution": 480,
+    "Intelligence": 408,
+    "Wisdom": 336,
+    "Charisma": 264,
+}
 trait_descriptions = {
     "Versatile": "Humans gain a +1 bonus to all attributes.",
     "Darkvision": "Can see in darkness up to 60 feet, but only in grayscale.",
@@ -281,7 +312,7 @@ trait_descriptions = {
 class_spell_slots = {
     "Wizard": {"cantrips": 3, "spells": 6},
     "Cleric": {"cantrips": 3, "spells": 5},
-    "Druid": {"cantrips": 2, "spells": 4},
+    "Druid": {"cantrips": 2, "spells": 3},
     "Sorcerer": {"cantrips": 4, "spells": 2},
     "Warlock": {"cantrips": 2, "spells": 2},
     "Bard": {"cantrips": 2, "spells": 4},
@@ -410,7 +441,7 @@ class_items = {
     },
     "Wizard": {
         "weapons": [Weapon("Dagger", 1, 2, "1d4 piercing", "melee"), Weapon("Quarterstaff", 4, 0.2, "1d6 bludgeoning", "melee")],
-        "armor": []
+        "armor": [Armor("Mage Armor", 0, 0, 13, "magical")]
     },
     "Rogue": {
         "weapons": [Weapon("Dagger", 1, 2, "1d4 piercing", "melee"), Weapon("Shortsword", 2, 10, "1d6 piercing", "melee")],
@@ -434,7 +465,7 @@ class_items = {
     },
     "Sorcerer": {
         "weapons": [Weapon("Dagger", 1, 2, "1d4 piercing", "melee"), Weapon("Quarterstaff", 4, 0.2, "1d6 bludgeoning", "melee")],
-        "armor": []
+        "armor": [Armor("Leather", 10, 10, 11, "light")]
     },
     "Monk": {
         "weapons": [Weapon("Shortsword", 2, 10, "1d6 piercing", "melee"), Weapon("Quarterstaff", 4, 0.2, "1d6 bludgeoning", "melee")],

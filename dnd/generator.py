@@ -1,4 +1,4 @@
-from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions, Item, class_items, Potion, MagicItem, Weapon , Armor, potions_list, magic_items_list, path_classy
+from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions, saving_throw_positions, class_items, class_saving_throws, Weapon , Armor, potions_list, magic_items_list, path_classy,stats_positions
 import random
 import textwrap
 import PyPDF2
@@ -133,7 +133,7 @@ def choose_portrait_gui(race):
         print(f"🖼️ Načítám obrázek: {img_path}")
         try:
             img = Image.open(img_path)
-            img = img.resize((300, 400))
+            img = img.resize((400, 500))
             img_tk = ImageTk.PhotoImage(img)
             image_label.config(image=img_tk)
             image_label.image = img_tk  # **Důležité, jinak se obrázek nezobrazí!**
@@ -178,7 +178,21 @@ def choose_portrait_gui(race):
     # ✅ Vrátíme vybraný portrét
     return getattr(root, "selected_portrait")
 
-    
+def get_saving_throws(character):
+    """Vrací saving throws jako slovník: {'Strength': '+4', ...}"""
+    saving_throws = {}
+    profs = class_saving_throws.get(character.char_class.name, [])
+ # Třídy mají různé proficiency
+    prof_bonus = (2)
+
+    for stat, value in character.stats.items():
+        base = calculate_stat_bonus(value)
+        total = base + prof_bonus if stat in profs else base
+        formatted = f"+{total}" if total >= 0 else str(total)
+        saving_throws[stat] = formatted
+
+    return saving_throws
+
 def generate_path(char_class_name):
     if char_class_name in path_classy:
         path = choose_option(path_classy[char_class_name], "Vyber podclassu:")
@@ -231,6 +245,7 @@ def generate_character():
     name = generate_name(race, gender)
     portrait = choose_portrait_gui(race)
 
+
     
     skills = []  # Initialize skills
     traits = []  # Initialize traits
@@ -271,10 +286,27 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
     # Vytvoříme overlay s textem
     overlay_pdf = "overlay.pdf"
     c = canvas.Canvas(overlay_pdf)
+    
+    x_save = 112
+    y_save_start = 579
+    spacing = 13  # Mezera mezi jednotlivými staty
+    c.setFont("Helvetica", 10)
+    character_saving_throws = get_saving_throws(character)
+    for i, stat in enumerate(["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]):
+        y = y_save_start - i * spacing
+        value = character_saving_throws[stat]
+        c.drawString(x_save, y, f" {value}")
+    
+
+    c.setFont("Helvetica", 12)
+    proficient_saves = class_saving_throws.get(character.char_class.name, [])
+    for save_name, (x, y) in saving_throw_positions.items():
+      if save_name in proficient_saves:
+        c.drawString(x, y, "•")
 
 
     portrait_x = 32
-    portrait_y = 40
+    portrait_y = 37
     portrait_width = 170
     portrait_height = 130
 
@@ -295,6 +327,18 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
     c.drawString(290, 585, str(character.hp))  # Hit Dice
     c.drawString(233, 448, str(character.hit_dice))  # HP
     
+
+
+    x_save = 112
+    y_save_start = 579
+    spacing = 13  # Mezera mezi jednotlivými staty
+    c.setFont("Helvetica", 10)
+    character_saving_throws = get_saving_throws(character)
+    for i, stat in enumerate(["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]):
+        y = y_save_start - i * spacing
+        value = character_saving_throws[stat]
+        c.drawString(x_save, y, f" {value}")
+        
     c.setFont("Helvetica", 12)
     for skill in character.skills:
         if skill in skill_positions:
@@ -313,13 +357,26 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
             c.drawString(traits_x, traits_y, line)
             traits_y -= 10  # Posun dolů pro další řádek
 
-    c.setFont("Helvetica", 13)
-    y_pos = 626
-    x_pos = 50
-    for stat, value in character.stats.items():
-        c.drawString(40, y_pos, f"{value}")
-        y_pos -= 73
+    
 
+    c.setFont("Helvetica", 13)
+    x_pos = 47
+    x_val = 50
+    stats_order = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
+
+    for stat, y in stats_positions.items():
+        value = character.stats.get(stat, 10)
+        bonus = calculate_stat_bonus(value)
+        bonus_str = f"+{bonus}" if bonus >= 0 else f"{bonus}"
+        c.drawString(x_val, y, f"{value}")
+        c.drawString(x_pos, y - 27, f"{bonus_str}")  
+
+
+    # Define proficiency bonus directly without an unnecessary function
+    prof_bonus = "+2"
+    c.drawString(99, 610, f"{prof_bonus}")
+
+    
     c.drawString(267, 191, "Inventory:")
     item_y = 181
     for item in character.inventory:
