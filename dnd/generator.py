@@ -315,7 +315,7 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
 
     c.setFont("Helvetica", 13)
     y_pos = 626
-    x_pos = 43
+    x_pos = 50
     for stat, value in character.stats.items():
         c.drawString(40, y_pos, f"{value}")
         y_pos -= 73
