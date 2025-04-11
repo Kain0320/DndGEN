@@ -172,9 +172,29 @@ saving_throw_positions = {
     "Constitution": (102, 550),
     "Intelligence": (102, 536),
     "Wisdom": (102, 522),
-    "Charisma": (102, 508)
+    "Charisma": (102, 509)
 }
-       
+stat_skills = {
+    "Acrobatics": "Dexterity",
+    "Animal Handling": "Wisdom",
+    "Arcana": "Intelligence",
+    "Athletics": "Strength",
+    "Deception": "Charisma",
+    "History": "Intelligence",
+    "Insight": "Wisdom",
+    "Intimidation": "Charisma",
+    "Investigation": "Intelligence",
+    "Medicine": "Wisdom",
+    "Nature": "Intelligence",
+    "Perception": "Wisdom",
+    "Performance": "Charisma",
+    "Persuasion": "Charisma",
+    "Religion": "Intelligence",
+    "Sleight of Hand": "Dexterity",
+    "Stealth": "Dexterity",
+    "Survival": "Wisdom"
+}
+
 classes = {
     "Fighter": Class("Fighter", "1d10", ["Longsword", "Shield"], ["Athletics", "Intimidation"]),
     "Wizard": Class("Wizard", "1d6", ["Dagger", "Spellbook"], ["Arcana", "History"]),
@@ -441,7 +461,7 @@ class_items = {
     },
     "Wizard": {
         "weapons": [Weapon("Dagger", 1, 2, "1d4 piercing", "melee"), Weapon("Quarterstaff", 4, 0.2, "1d6 bludgeoning", "melee")],
-        "armor": [Armor("Mage Armor", 0, 0, 13, "magical")]
+        "armor": []
     },
     "Rogue": {
         "weapons": [Weapon("Dagger", 1, 2, "1d4 piercing", "melee"), Weapon("Shortsword", 2, 10, "1d6 piercing", "melee")],
@@ -449,7 +469,7 @@ class_items = {
     },
     "Cleric": {
         "weapons": [Weapon("Mace", 4, 5, "1d6 bludgeoning", "melee"), Weapon("Warhammer", 2, 15, "1d8 bludgeoning", "melee")],
-        "armor": [Armor("Chainmail", 20, 75, 16, "medium")]
+        "armor": [Armor("Chainmail", 20, 75, 16, "medium"), Armor("Plate", 65, 1500, 18, "heavy")]
     },
     "Bard": {
         "weapons": [Weapon("Rapier", 2, 25, "1d8 piercing", "melee"), Weapon("Shortsword", 2, 10, "1d6 piercing", "melee")],
@@ -465,7 +485,7 @@ class_items = {
     },
     "Sorcerer": {
         "weapons": [Weapon("Dagger", 1, 2, "1d4 piercing", "melee"), Weapon("Quarterstaff", 4, 0.2, "1d6 bludgeoning", "melee")],
-        "armor": [Armor("Leather", 10, 10, 11, "light")]
+        "armor": []
     },
     "Monk": {
         "weapons": [Weapon("Shortsword", 2, 10, "1d6 piercing", "melee"), Weapon("Quarterstaff", 4, 0.2, "1d6 bludgeoning", "melee")],

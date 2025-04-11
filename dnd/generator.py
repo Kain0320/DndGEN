@@ -1,4 +1,4 @@
-from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions, saving_throw_positions, class_items, class_saving_throws, Weapon , Armor, potions_list, magic_items_list, path_classy,stats_positions
+from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions, saving_throw_positions, class_items, class_saving_throws, Weapon , Armor, potions_list, magic_items_list, path_classy,stats_positions,stat_skills
 import random
 import textwrap
 import PyPDF2
@@ -216,6 +216,18 @@ def generate_name(race, gender):
 
     return random.choice(names[race_name][gender])
 
+def get_skills(character):
+    bonus_skills = {}
+    prof_bonus = 2
+
+    for skill, related_stat in stat_skills.items():
+        stat_value = character.stats.get(related_stat, 10)
+        base = calculate_stat_bonus(stat_value)
+        total = base + prof_bonus if skill in character.skills else base
+        formatted = f"+{total}" if total >= 0 else str(total)
+        bonus_skills[skill] = formatted
+    return bonus_skills
+
 def set_ac(character):
     """Nastaví AC (Armor Class) postavy na základě jejího vybavení."""
     dex_bonus = calculate_stat_bonus(character.stats.get("Dexterity", 0))
@@ -275,7 +287,9 @@ def generate_character():
     print(f"Features: {character.features}")
     print(f"Path: {character.path}")
     return character
+
 #################PDFPRENOS#################
+
 def calculate_stat_bonus(stat_value):
     """Vypočítá bonus na základě hodnoty statu."""
     return (stat_value - 10) // 2
@@ -287,29 +301,29 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
     overlay_pdf = "overlay.pdf"
     c = canvas.Canvas(overlay_pdf)
     
+    "Saving throw"
     x_save = 112
     y_save_start = 579
-    spacing = 13  # Mezera mezi jednotlivými staty
+    spacing = 13.5  # Mezera mezi jednotlivými staty
     c.setFont("Helvetica", 10)
     character_saving_throws = get_saving_throws(character)
     for i, stat in enumerate(["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]):
         y = y_save_start - i * spacing
         value = character_saving_throws[stat]
         c.drawString(x_save, y, f" {value}")
-    
 
     c.setFont("Helvetica", 12)
     proficient_saves = class_saving_throws.get(character.char_class.name, [])
     for save_name, (x, y) in saving_throw_positions.items():
       if save_name in proficient_saves:
         c.drawString(x, y, "•")
+    ""
 
-
+    "Portraits"
     portrait_x = 32
     portrait_y = 37
     portrait_width = 170
     portrait_height = 130
-
     try:
         print(f"🖼️ Vkládám obrázek do PDF: {character.portrait}")  # ✅ Debug
         img_reader = ImageReader(character.portrait)
@@ -317,8 +331,9 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
         print("✅ Obrázek úspěšně vložen do PDF!")
     except Exception as e:
         print(f"❌ Chyba při vkládání obrázku do PDF: {e}")
-    
-    # Pozice závisí na konkrétním PDF 
+    ""
+
+    "Base"
     c.setFont("Helvetica-Bold", 14)
     c.drawString(50, 715, character.name)  # Jméno
     c.drawString(270, 705, character.race.name)  # Rasa
@@ -326,25 +341,29 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
     c.drawString(385, 730, character.background.name)  # Zázemí
     c.drawString(290, 585, str(character.hp))  # Hit Dice
     c.drawString(233, 448, str(character.hit_dice))  # HP
-    
+    ""
+      
+    "SKILLS"
+    c.setFont("Helvetica", 9)
+    x_pos = 112
+    y_pos_start = 462
+    spacing = 13.5  # Mezera mezi jednotlivými staty
+    character_skills = get_skills(character)
+    skill_list = list(stat_skills.keys())  # Všechny skilly ve správném pořadí
 
+    for i, skill in enumerate(skill_list):
+      y = y_pos_start - i * spacing
+      value = character_skills.get(skill, "")
+      c.drawString(x_pos, y, value)
 
-    x_save = 112
-    y_save_start = 579
-    spacing = 13  # Mezera mezi jednotlivými staty
-    c.setFont("Helvetica", 10)
-    character_saving_throws = get_saving_throws(character)
-    for i, stat in enumerate(["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]):
-        y = y_save_start - i * spacing
-        value = character_saving_throws[stat]
-        c.drawString(x_save, y, f" {value}")
-        
     c.setFont("Helvetica", 12)
     for skill in character.skills:
         if skill in skill_positions:
             x, y = skill_positions[skill]
             c.drawString(x, y, "•")  # Přidáme tečku
+    ""
 
+    "Traits"
     c.setFont("Helvetica-Bold", 10)
     traits_x = 412  # X souřadnice
     traits_y = 394  # Začátek seznamu vlastností
@@ -356,27 +375,26 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
         for line in wrapped_text:
             c.drawString(traits_x, traits_y, line)
             traits_y -= 10  # Posun dolů pro další řádek
-
+    ""
     
-
+    "Stats+"
     c.setFont("Helvetica", 13)
     x_pos = 47
     x_val = 50
-    stats_order = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
-
     for stat, y in stats_positions.items():
         value = character.stats.get(stat, 10)
         bonus = calculate_stat_bonus(value)
         bonus_str = f"+{bonus}" if bonus >= 0 else f"{bonus}"
         c.drawString(x_val, y, f"{value}")
         c.drawString(x_pos, y - 27, f"{bonus_str}")  
+    ""
 
-
-    # Define proficiency bonus directly without an unnecessary function
+    "Prof bonus"
     prof_bonus = "+2"
     c.drawString(99, 610, f"{prof_bonus}")
-
+    ""
     
+    "Inventory"
     c.drawString(267, 191, "Inventory:")
     item_y = 181
     for item in character.inventory:
@@ -386,20 +404,21 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
             c.drawString(267, item_y, line)
             item_y -= 10
         item_y -= 5
-
     for weapon in character.inventory:
         if isinstance(weapon, Weapon):
             c.drawString(329,392 , f"{weapon.damage}")
             c.drawString(235, 392, f"{weapon.name}")
-
     c.setFont("Helvetica", 15)
+    ac_value = set_ac(character)  # Calculate the armor class once
+    if any(isinstance(item, Armor) for item in character.inventory):
+        for armor in character.inventory:
+            if isinstance(armor, Armor):
+                c.drawString(238, 636, f"{ac_value}")
+    else:
+        c.drawString(238, 636, f"{ac_value}")  # Display AC even if no armor is in inventory
+    ""   
 
-    for armor in character.inventory:
-        if isinstance(armor, Armor):
-            ac_value = set_ac(character)  # Calculate the armor class
-            c.drawString(238, 636, f"{ac_value}")
-            
-
+    "Spells"
     c.showPage()
     c.showPage()
     spellcasting_classes = ["Warlock", "Wizard", "Cleric", "Druid", "Bard", "Sorcerer", "Paladin", "Ranger"]
