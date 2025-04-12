@@ -14,6 +14,7 @@ class Character:
         self.char_spells= char_spells
         self.inventory = generate_items(self.char_class.name)
         self.features = []  # Initialize features as an empty list
+        self.spells = {"cantrips": [], "spells": []}
         
         
         
@@ -211,24 +212,24 @@ classes = {
 }
 spells_by_class = {
     "Wizard": {
-        "cantrips": ["Mage Hand", "Fire Bolt", "Prestidigitation", "Ray of Frost", "Minor Illusion", "Message", "Light"],
-        "spells": ["Magic Missile", "Shield", "Mage Armor", "Burning Hands", "Detect Magic", "Identify", "Feather Fall", "Chromatic Orb", "Sleep", "Thunderwave"]
+        "cantrips": ["Mage Hand", "Fire Bolt", "Prestidigitation", "Ray of Frost", "Minor Illusion", "Message"],
+        "spells": ["Magic Missile", "Mage Armor", "Burning Hands", "Detect Magic", "Identify", "Feather Fall", "Chromatic Orb", "Sleep", "Thunderwave"]
     },
     "Cleric": {
-        "cantrips": ["Sacred Flame", "Thaumaturgy", "Guidance", "Spare the Dying", "Light", "Resistance"],
+        "cantrips": ["Sacred Flame", "Thaumaturgy", "Guidance", "Spare the Dying", "Resistance"],
         "spells": ["Cure Wounds", "Bless", "Guiding Bolt", "Healing Word", "Detect Magic", "Protection from Evil and Good", "Inflict Wounds", "Command", "Sanctuary", "Create Water"]
     },
     "Sorcerer": {
-        "cantrips": ["Fire Bolt", "Mage Hand", "Ray of Frost", "Minor Illusion", "Message", "Shocking Grasp", "Acid Splash"],
-        "spells": ["Shield", "Mage Armor", "Magic Missile", "Burning Hands", "Chromatic Orb", "Thunderwave", "Expeditious Retreat", "Witch Bolt", "Disguise Self"]
+        "cantrips": ["Fire Bolt", "Mage Hand", "Ray of Frost", "Minor Illusion", "Message", "Acid Splash"],
+        "spells": ["Mage Armor", "Magic Missile", "Burning Hands", "Chromatic Orb", "Thunderwave", "Expeditious Retreat", "Witch Bolt", "Disguise Self"]
     },
     "Bard": {
-        "cantrips": ["Vicious Mockery", "Mage Hand", "Prestidigitation", "Message", "Dancing Lights", "Light"],
+        "cantrips": ["Vicious Mockery", "Mage Hand", "Prestidigitation", "Message", "Dancing Lights",],
         "spells": ["Healing Word", "Charm Person", "Disguise Self", "Dissonant Whispers", "Tasha's Hideous Laughter", "Faerie Fire", "Sleep", "Identify", "Unseen Servant", "Silent Image"]
     },
     "Warlock": {
-        "cantrips": ["Eldritch Blast", "Mage Hand", "Thaumaturgy", "Minor Illusion", "Chill Touch", "Friends"],
-        "spells": ["Hex", "Armor of Agathys", "Shield", "Hellish Rebuke", "Detect Magic", "Witch Bolt", "Cause Fear", "Expeditious Retreat"]
+        "cantrips": ["Eldritch Blast", "Mage Hand", "Minor Illusion", "Chill Touch", "Friends"],
+        "spells": ["Hex", "Armor of Agathys","Hellish Rebuke", "Detect Magic", "Witch Bolt", "Cause Fear", "Expeditious Retreat"]
     },
     "Druid": {
         "cantrips": ["Druidcraft", "Produce Flame", "Thorn Whip", "Guidance", "Shillelagh", "Mending"],
@@ -236,7 +237,7 @@ spells_by_class = {
     },
     "Paladin": {
         "cantrips": [],  # Paladin nemá cantripy
-        "spells": ["Bless", "Shield", "Cure Wounds", "Divine Smite", "Wrathful Smite", "Heroism", "Compelled Duel", "Thunderous Smite", "Detect Evil and Good"]
+        "spells": ["Bless", "Shield of Faith", "Cure Wounds", "Wrathful Smite", "Heroism", "Compelled Duel", "Thunderous Smite", "Detect Evil and Good"]
     },
     "Ranger": {
         "cantrips": [],  # Ranger nemá cantripy
@@ -346,7 +347,7 @@ class_spell_slots = {
 spells_descriptions = {
     # ✅ 1ST-LEVEL SPELLS
     "Magic Missile": "Creates darts of magical force that hit automatically, dealing 1d4 + 1 force damage each.",
-    "Shield": "A magical force surrounds you, granting +5 AC for 1 round.",
+    "Shield of Faith": "A shimmering field appears and surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration",
     "Mage Armor": "You touch a willing creature and protect them with magical armor, giving them 13 + Dexterity modifier AC for 8 hours.",
     "Burning Hands": "A cone of fire erupts from your hands, dealing 3d6 fire damage to creatures in a 15-foot cone (Dex save for half).",
     "Cure Wounds": "A creature you touch regains hit points equal to 1d8 + your spellcasting modifier.",
@@ -359,7 +360,6 @@ spells_descriptions = {
     "Entangle": "You cause plants to grow and ensnare creatures in the area, restraining them. A creature must succeed on a Strength saving throw or be restrained.",
     "Faerie Fire": "You outline creatures in light, granting advantage to attack rolls against them for 1 minute.",
     "Goodberry": "You create up to 10 magical berries that each restore 1 hit point when consumed.",
-    "Divine Smite": "You channel divine energy to deal extra radiant damage on a successful melee hit. The damage is 2d8 for a first-level spell slot, plus 1d8 for each level higher.",
     "Wrathful Smite": "You imbue your weapon with divine power, dealing 1d6 psychic damage and potentially frightening the target (Wisdom save to resist).",
     "Thunderwave": "A wave of force erupts from you, dealing 2d8 thunder damage to creatures within 15 feet (Con save for half).",
     "Sleep": "You put creatures in a 20-foot radius to sleep. Affects creatures with the lowest hit points first.",
@@ -430,11 +430,13 @@ class Weapon(Item):
         return f"{self.name} (Weapon) - {self.damage} damage, Type: {self.weapon_type}{reach_text}, Weight: {self.weight} lbs, Value: {self.value} gp"
 class Armor(Item):
     def __init__(self, name, weight, value, ac, armor_type):
-        super().__init__(name, weight, value)
+        self.name = name
+        self.weight = weight
+        self.value = value
         self.ac = ac
         self.armor_type = armor_type  # "light", "medium", "heavy"
     def __str__(self):
-        return f"{self.name} ({self.armor_class})"
+        return f"{self.name} (AC: {self.ac})"
 
     def describe(self):
         return f"{self.name} (Armor) - AC: {self.ac}, Type: {self.armor_type}, Weight: {self.weight} lbs, Value: {self.value} gp"

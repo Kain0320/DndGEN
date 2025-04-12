@@ -1,4 +1,8 @@
-from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions, saving_throw_positions, class_items, class_saving_throws, Weapon , Armor, potions_list, magic_items_list, path_classy,stats_positions,stat_skills
+from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions, saving_throw_positions, class_items, class_saving_throws, Weapon, Armor, potions_list, magic_items_list, path_classy, stats_positions, stat_skills, classes
+
+# Ensure `races` is defined or imported correctly
+if not races:
+    races = {"Human": "Human", "Elf": "Elf", "Dwarf": "Dwarf"}  # Example fallback definition
 import random
 import textwrap
 import PyPDF2
@@ -9,43 +13,50 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from PIL import Image, ImageTk
 
-
 class_spells = spells_by_class
 
+def choose_option_gui(options, title="Vyber možnost"):
+    root = tk.Tk()
+    root.title(title)
 
-def choose_option(options, prompt):
-    """Umožní uživateli vybrat možnost nebo zvolit náhodnou variantu."""
-    print(prompt)
-
-    # Pokud jsou v `options` objekty, získáme jejich názvy
+    chosen = tk.Variable()
     if isinstance(options, dict):
-        options_list = list(options.values())
+        display_list = list(options.values())
     else:
-        options_list = options  # Pokud je už list, použijeme ho přímo
+        display_list = options
 
-    # Výpis možností s názvy místo paměťových adres
-    for i, option in enumerate(options_list, 1):
-        option_name = option.name if hasattr(option, "name") else str(option)
-        print(f"{i}. {option_name}")
-    print("0. Random")
+    def select(option):
+        chosen.set(option)
+        root.selected_object = option 
+        root.destroy()
 
-    # Výběr uživatelem
-    choice = input("Vyber možnost (zadej číslo): ")
-    if choice == "0":
-        return random.choice(options_list)
-    elif choice.isdigit() and 1 <= int(choice) <= len(options_list):
-        return options_list[int(choice) - 1]
-    else:
-        print("❌ Neplatná volba, vybírám náhodně.")
-        return random.choice(options_list)
+    for option in display_list:
+        name = option.name if hasattr(option, "name") else str(option)
+        btn = tk.Button(root, text=name, width=30, command=lambda opt=option: select(opt))
+        btn.pack(pady=3)
 
-def choose_gender():
-    options = ["Muž", "Žena"]
-    print("Vyber pohlaví:")
-    for i, option in enumerate(options, 1):
-        print(f"{i}. {option}")
-    choice = int(input("Zadej číslo: ")) - 1
-    return options[choice]
+    btn_random = tk.Button(root, text="🎲 Náhodně", width=30, command=lambda: select(random.choice(display_list)))
+    btn_random.pack(pady=10)
+
+    root.mainloop()
+    return getattr(root, "selected_object", random.choice(display_list))
+
+def choose_gender_gui():
+    root = tk.Tk()
+    root.title("Vyber pohlaví")
+
+    gender = tk.StringVar()
+
+    def select(g):
+        gender.set(g)
+        root.destroy()
+
+    tk.Button(root, text="Muž", command=lambda: select("Muž")).pack(pady=10)
+    tk.Button(root, text="Žena", command=lambda: select("Žena")).pack(pady=10)
+    tk.Button(root, text="🎲 Náhodně", command=lambda: select(random.choice(["Muž", "Žena"]))).pack(pady=10)
+
+    root.mainloop()
+    return gender.get()
 
 def calculate_hit_points(char_class, constitution_mod):
     """Vypočítá hit dice a maximální HP postavy."""
@@ -57,50 +68,84 @@ def calculate_hit_points(char_class, constitution_mod):
         raise ValueError(f"Neplatný formát hit dice: {dice}")
     return dice, max_hp
 
-def select_spells(char_class):
-    """Umožní hráči vybrat pevný počet cantripů a 1st-level spellů odděleně."""
-    
+def select_spells_gui(char_class):
     class_name = char_class.name
-    if class_name not in spells_by_class or class_name not in class_spell_slots:
-        print(f"{class_name} nemá žádná kouzla na 1. úrovni.")
-        return {"cantrips": [], "spells": []}
+    spell_data = spells_by_class.get(class_name, {})
+    spell_limits = class_spell_slots.get(class_name, {"cantrips": 0, "spells": 0})
 
-    spell_limits = class_spell_slots[class_name]
-    cantrip_limit = spell_limits["cantrips"]
-    spell_limit = spell_limits["spells"] 
+    selected = {"cantrips": [], "spells": []}
 
-    spell_choices = spells_by_class[class_name]
-    selected_spells = {"cantrips": [], "spells": []}
+    def select_from_list(spell_list, limit, spell_type):
+        root = tk.Tk()
+        root.title(f"Vyber {spell_type} ({limit}) pro {class_name}")
+        root.geometry("1400x750")
 
-    # ✅ Výběr cantripů (pokud classa nějaké má)
-    if cantrip_limit > 0:
-        print(f"Vyběr: {cantrip_limit} Cantrips pro {class_name}:")
-        selected_spells["cantrips"] = select_from_list(spell_choices["cantrips"], cantrip_limit)
+        selected_local = []
+        images = {}
+        buttons = {}
+        frame = tk.Frame(root)
+        frame.pack()
 
-    # ✅ Výběr 1st-level spellů (pokud classa nějaké má)
-    if spell_limit > 0:
-        print(f"Vyběr: {spell_limit} Spells 1. úrovně pro  {class_name}:")
-        selected_spells["spells"] = select_from_list(spell_choices["spells"], spell_limit)
+        canvas = tk.Canvas(frame, width=1200, height=650)
+        scrollbar = tk.Scrollbar(frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas)
 
-    return selected_spells
+        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0,0 ), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
 
-def select_from_list(spell_list, limit):
-    """Pomocná funkce pro výběr pevně daného počtu kouzel."""
-    selected = []
-    while len(selected) < limit:
-        print("\nMůžete vybrat:")
-        for idx, spell in enumerate(spell_list, 1):
-            print(f"{idx}. {spell}")
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="left", fill="y")
+        def on_mousewheel(event):
+          canvas.xview_scroll(int(-1 * (event.delta / 120)), "units")
 
-        choice = input(f"Vybeirate z (1-{len(spell_list)}), {limit - len(selected)} zbývá: ")
-        if choice.isdigit():
-            selected_idx = int(choice) - 1
-            if 0 <= selected_idx < len(spell_list) and spell_list[selected_idx] not in selected:
-                selected.append(spell_list[selected_idx])
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
+        
+        def toggle(spell_name):
+         if spell_name in selected_local:
+             selected_local.remove(spell_name)
+             buttons[spell_name].configure(bg="SystemButtonFace")
+         elif len(selected_local) < limit:
+            selected_local.append(spell_name)
+            buttons[spell_name].configure(bg="lightgreen")
+        columns = 3
+        for index, spell_name in enumerate(spell_list):
+            folder = "cantrips" if spell_type.lower() == "cantrips" else "spells"
+            spell_path = os.path.join("/Users/user/DNDGEN/DndGEN/dnd/spell_images", folder, spell_name.replace(" ", "_") + ".png")
+            frame_inner = tk.Frame(scrollable_frame, padx=10, pady=10, bd=5, relief="groove")
+            row = index // columns
+            col = index % columns
+            frame_inner.grid(row=row, column=col, padx=10, pady=10)
+
+            try:
+                img = Image.open(spell_path).resize((350, 450))
+                img_tk = ImageTk.PhotoImage(img)
+                images[spell_name] = img_tk
+                tk.Label(frame_inner, image=img_tk).pack()
+            except:
+                tk.Label(frame_inner, text=f"{spell_name} (bez obrázku)").pack()
+
+            btn = tk.Button(frame_inner, text=spell_name, command=lambda name=spell_name: toggle(name))
+            btn.pack()
+            buttons[spell_name] = btn
+
+        def confirm_selection():
+            if len(selected_local) < limit:
+                tk.messagebox.showerror("Chyba", f"Musíte vybrat alespoň {limit} položek.")
             else:
-                print("❌ Neplatná volba nebo už vybrané kouzlo, zkus znovu.")
-        else:
-            print("❌ Zadej číslo kouzla.")
+                root.destroy()
+
+        tk.Button(root, text="✅ Potvrdit", command=confirm_selection).pack(pady=10)
+        root.mainloop()
+        return selected_local
+
+    # Výběr cantripů
+    if spell_limits["cantrips"] > 0:
+        selected["cantrips"] = select_from_list(spell_data.get("cantrips", []), spell_limits["cantrips"], "Cantrips")
+
+    # Výběr spellů
+    if spell_limits["spells"] > 0:
+        selected["spells"] = select_from_list(spell_data.get("spells", []), spell_limits["spells"], "Spells")
 
     return selected
 
@@ -108,10 +153,10 @@ def generate_items(char_class_name):
     items = []
     if char_class_name in class_items:
         class_item = class_items[char_class_name]
-        weapon = choose_option(class_item["weapons"], "Vyber zbraň:")
+        weapon = choose_option_gui(class_item["weapons"], "Vyber zbraň:")
         items.append(weapon)
         if class_item["armor"]:
-            armor = choose_option(class_item["armor"], "Vyber brnění:")
+            armor = choose_option_gui(class_item["armor"], "Vyber brnění:")
             items.append(armor)
     potion = random.choice(potions_list)
     magic_item = random.choice(magic_items_list)
@@ -121,7 +166,9 @@ def generate_items(char_class_name):
 def choose_portrait_gui(race):
     """GUI pro výběr portrétu postavy podle rasy."""
     portraits_dir = "/Users/user/DNDGEN/DndGEN/dnd/portraits"  # Absolutní cesta ke složce
-    race_name = race.name if hasattr(race, "name") else str(race)
+    race_name = getattr(race, "name", str(race))
+    if "<" in race_name:  # Jestli dostaneme něco jako <base.Character.Race object ...>
+      race_name = race.__class__.__name__
     race_dir = os.path.join(portraits_dir, race_name)
     portrait_files = [f for f in os.listdir(race_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
     root = tk.Tk()
@@ -195,27 +242,36 @@ def get_saving_throws(character):
 
 def generate_path(char_class_name):
     if char_class_name in path_classy:
-        path = choose_option(path_classy[char_class_name], "Vyber podclassu:")
+        path = choose_option_gui(path_classy[char_class_name], "Vyber podclassu:")
         return path
 
-def generate_name(race, gender):
-
-    """Umožní uživateli zadat vlastní jméno nebo vygeneruje náhodné."""
-    user_input = input("Chceš zadat vlastní jméno? (ano/ne): ").strip().lower()
-    if user_input == "ano":
-        name = input("Zadej jméno postavy: ").strip()
-        if name:  # Ověření, že něco zadal
-            return name
-        print("Nezadáno žádné jméno, generuji náhodné...")
-    # Pokud uživatel nezadal jméno nebo nezadal nic
+def generate_name_gui(race, gender):
     race_name = race.name if hasattr(race, "name") else str(race)
-    if race_name not in names:
-        raise ValueError(f"Rasa '{race_name}' není v databázi jmen!")
-    if gender not in names[race_name]:
-        raise ValueError(f"Pohlaví '{gender}' není dostupné pro rasu '{race_name}'!")
+    name_list = names.get(race_name, {}).get(gender, [])
+    if not name_list:
+        name_list = ["Default Name"]  # Provide a fallback name if the list is empty
+    
 
-    return random.choice(names[race_name][gender])
+    root = tk.Tk()
+    root.title("Zadej nebo vyber jméno")
 
+    entry = tk.Entry(root)
+    entry.pack(pady=10)
+    chosen = tk.StringVar()
+
+    def confirm():
+        name = entry.get()
+        chosen.set(name if name else random.choice(name_list))
+        root.destroy()
+
+    btn_random = tk.Button(root, text="🎲 Náhodné jméno", command=lambda: entry.insert(0, random.choice(name_list)))
+    btn_random.pack()
+    tk.Button(root, text="✅ Potvrdit", command=confirm).pack()
+    
+
+    root.mainloop()
+    return chosen.get()
+    
 def get_skills(character):
     bonus_skills = {}
     prof_bonus = 2
@@ -250,15 +306,12 @@ def set_ac(character):
 def generate_character():
     print("\n=== GENERÁTOR POSTAV D&D 5E ===\n")
 
-    race = choose_option(races, "Vyber rasu:")
-    char_class = choose_option(classes, "Vyber povolání:")
-    background = choose_option(backgrounds, "Vyber zázemí:")
-    gender = choose_gender()
-    name = generate_name(race, gender)
+    race = choose_option_gui(races, "Vyber rasu:")
+    char_class = choose_option_gui(classes, "Vyber povolání:")
+    background = choose_option_gui(backgrounds, "Vyber zázemí:")
+    gender = choose_gender_gui()
+    name = generate_name_gui(race, gender)
     portrait = choose_portrait_gui(race)
-
-
-    
     skills = []  # Initialize skills
     traits = []  # Initialize traits
     character = Character(name, race, char_class, background, hit_dice, skills, traits, generate_items= generate_items)
@@ -266,7 +319,7 @@ def generate_character():
     character.hit_dice, character.hp = calculate_hit_points(char_class, constitution_mod)
     skills = character.set_skills()
     traits = character.set_traits()
-    character.spells = select_spells(char_class)
+    character.spells = select_spells_gui(char_class)
     char_class.apply_class_bonus(character)
     character.path = generate_path(char_class.name) if char_class.name in path_classy else None
     character.portrait = portrait # Replace with a valid default path
