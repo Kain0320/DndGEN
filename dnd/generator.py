@@ -1,61 +1,113 @@
 from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions, saving_throw_positions, class_items, class_saving_throws, Weapon, Armor, potions_list, magic_items_list, path_classy, stats_positions, stat_skills, classes
-
-# Ensure `races` is defined or imported correctly
-if not races:
-    races = {"Human": "Human", "Elf": "Elf", "Dwarf": "Dwarf"}  # Example fallback definition
 import random
 import textwrap
+from functools import partial
 import PyPDF2
 import os
+from customtkinter import *
+import customtkinter as ctk
 import tkinter as tk
 from tkinter import Label, Button
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from PIL import Image, ImageTk
+import json
 
 class_spells = spells_by_class
-
 def choose_option_gui(options, title="Vyber možnost"):
-    root = tk.Tk()
-    root.title(title)
+    ctk.set_appearance_mode("dark")  # nebo "light"
+    ctk.set_default_color_theme("blue")  # nebo "blue"
+    ctk.set_widget_scaling(1.0)
 
-    chosen = tk.Variable()
+    root = ctk.CTk()
+    root.title(title)
+    root.geometry("400x600")
+    root.resizable(False, True)
+
+    chosen = ctk.StringVar()
+    root.already_selected = False
+
     if isinstance(options, dict):
         display_list = list(options.values())
     else:
         display_list = options
 
-    def select(option):
+    def select(btn, option):
+        if not root.already_selected:   # ⬅️ Přidat tuto kontrolu
+         root.already_selected = True
+         btn.configure(fg_color="green", text="✅ Vybráno")
+         root.after(300, lambda: finish(option))
+
+    def finish(option):
         chosen.set(option)
-        root.selected_object = option 
-        root.destroy()
+        root.selected_object = option
+        root.after(100,root.destroy)  # ukončí mainloop
+  
+    frame = ctk.CTkScrollableFrame(root)
+    frame.pack(expand=True, fill="both", pady=10, padx=10)
 
     for option in display_list:
         name = option.name if hasattr(option, "name") else str(option)
-        btn = tk.Button(root, text=name, width=30, command=lambda opt=option: select(opt))
-        btn.pack(pady=3)
+        btn = ctk.CTkButton(frame, text=name, width=300)
+        btn.configure(command=partial(select, btn, option))
+        btn.pack(pady=5)
+        
+    def random_select():
+        if not root.already_selected:
+            root.already_selected = True
+            finish(random.choice(display_list))
 
-    btn_random = tk.Button(root, text="🎲 Náhodně", width=30, command=lambda: select(random.choice(display_list)))
-    btn_random.pack(pady=10)
-
-    root.mainloop()
+    # Náhodné tlačítko (bez animace nebo s modrým efektem globálně)
+    ctk.CTkButton(root, text="🎲 Náhodně", width=300, command=random_select).pack(pady=10)
+    try:
+       root.mainloop()
+    except Exception as e:
+        if any(keyword in str(e) for keyword in ["update", "click_animation", "dpi_scaling", "update"]):
+           pass  # ticho
+        else:
+           raise
     return getattr(root, "selected_object", random.choice(display_list))
 
 def choose_gender_gui():
-    root = tk.Tk()
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("blue")
+
+    root = ctk.CTk()
     root.title("Vyber pohlaví")
+    root.geometry("300x200")
 
-    gender = tk.StringVar()
+    gender = ctk.StringVar()
 
-    def select(g):
-        gender.set(g)
+    def select(btn,value):
+        btn.configure(fg_color="green", text="✅ Vybráno")
+        root.after(300, lambda: finish(value))
+
+    def finish(value):
+        gender.set(value)
         root.destroy()
 
-    tk.Button(root, text="Muž", command=lambda: select("Muž")).pack(pady=10)
-    tk.Button(root, text="Žena", command=lambda: select("Žena")).pack(pady=10)
-    tk.Button(root, text="🎲 Náhodně", command=lambda: select(random.choice(["Muž", "Žena"]))).pack(pady=10)
+    ctk.CTkLabel(root, text="Zvol pohlaví:", font=("Arial", 16)).pack(pady=10)
 
-    root.mainloop()
+    btn_m = ctk.CTkButton(root, text="Muž")
+    btn_m.configure(command=lambda: select(btn_m, "Muž"))
+    btn_m.pack(pady=5)
+
+    btn_f = ctk.CTkButton(root, text="Žena")
+    btn_f.configure(command=lambda: select(btn_f, "Žena"))
+    btn_f.pack(pady=5)
+
+    btn_r = ctk.CTkButton(root, text="🎲 Náhodně")
+    btn_r.configure(command=lambda: select(btn_r, random.choice(["Muž", "Žena"])))
+    btn_r.pack(pady=10)
+
+    try:
+        root.mainloop()
+    except Exception as e:
+        if "click_animation" in str(e) or "dpi_scaling" in str(e):
+            print("⚠️ Potlačená systémová chyba:", e)
+        else:
+            raise
+
     return gender.get()
 
 def calculate_hit_points(char_class, constitution_mod):
@@ -76,43 +128,40 @@ def select_spells_gui(char_class):
     selected = {"cantrips": [], "spells": []}
 
     def select_from_list(spell_list, limit, spell_type):
-        root = tk.Tk()
+        root = ctk.CTk()
         root.title(f"Vyber {spell_type} ({limit}) pro {class_name}")
-        root.geometry("1400x750")
+        root.geometry("1480x800")
 
         selected_local = []
         images = {}
         buttons = {}
-        frame = tk.Frame(root)
-        frame.pack()
+        frame = ctk.CTkFrame(root)
+        frame.pack(expand=True, fill="both")
 
-        canvas = tk.Canvas(frame, width=1200, height=650)
-        scrollbar = tk.Scrollbar(frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas)
+        canvas = ctk.CTkCanvas(frame, width=1400, height=750)
+        scrollbar = ctk.CTkScrollbar(frame, orientation="vertical", command=canvas.yview)
+        scrollable_frame = ctk.CTkFrame(canvas)
 
         scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0,0 ), window=scrollable_frame, anchor="nw")
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="left", fill="y")
-        def on_mousewheel(event):
-          canvas.xview_scroll(int(-1 * (event.delta / 120)), "units")
 
-        canvas.bind_all("<MouseWheel>", on_mousewheel)
-        
         def toggle(spell_name):
-         if spell_name in selected_local:
-             selected_local.remove(spell_name)
-             buttons[spell_name].configure(bg="SystemButtonFace")
-         elif len(selected_local) < limit:
-            selected_local.append(spell_name)
-            buttons[spell_name].configure(bg="lightgreen")
-        columns = 3
+            if spell_name in selected_local:
+                selected_local.remove(spell_name)
+                buttons[spell_name].configure(fg_color="gray")
+            elif len(selected_local) < limit:
+                selected_local.append(spell_name)
+                buttons[spell_name].configure(fg_color="green")
+
+        columns = 4
         for index, spell_name in enumerate(spell_list):
             folder = "cantrips" if spell_type.lower() == "cantrips" else "spells"
             spell_path = os.path.join("/Users/user/DNDGEN/DndGEN/dnd/spell_images", folder, spell_name.replace(" ", "_") + ".png")
-            frame_inner = tk.Frame(scrollable_frame, padx=10, pady=10, bd=5, relief="groove")
+            frame_inner = ctk.CTkFrame(scrollable_frame, corner_radius=10)
             row = index // columns
             col = index % columns
             frame_inner.grid(row=row, column=col, padx=10, pady=10)
@@ -121,21 +170,21 @@ def select_spells_gui(char_class):
                 img = Image.open(spell_path).resize((350, 450))
                 img_tk = ImageTk.PhotoImage(img)
                 images[spell_name] = img_tk
-                tk.Label(frame_inner, image=img_tk).pack()
+                ctk.CTkLabel(frame_inner, image=img_tk, text="").pack()
             except:
-                tk.Label(frame_inner, text=f"{spell_name} (bez obrázku)").pack()
+                ctk.CTkLabel(frame_inner, text=f"{spell_name} (bez obrázku)").pack()
 
-            btn = tk.Button(frame_inner, text=spell_name, command=lambda name=spell_name: toggle(name))
-            btn.pack()
+            btn = ctk.CTkButton(frame_inner, text=spell_name, command=lambda name=spell_name: toggle(name))
+            btn.pack(pady=5)
             buttons[spell_name] = btn
 
         def confirm_selection():
             if len(selected_local) < limit:
-                tk.messagebox.showerror("Chyba", f"Musíte vybrat alespoň {limit} položek.")
+                ctk.CTkMessagebox.show_error("Chyba", f"Musíte vybrat alespoň {limit} položek.")
             else:
                 root.destroy()
 
-        tk.Button(root, text="✅ Potvrdit", command=confirm_selection).pack(pady=10)
+        ctk.CTkButton(root, text="✅ Potvrdit", command=confirm_selection).pack(pady=10)
         root.mainloop()
         return selected_local
 
@@ -164,66 +213,60 @@ def generate_items(char_class_name):
     return items  + [potion, magic_item]
 
 def choose_portrait_gui(race):
-    """GUI pro výběr portrétu postavy podle rasy."""
-    portraits_dir = "/Users/user/DNDGEN/DndGEN/dnd/portraits"  # Absolutní cesta ke složce
+    portraits_dir = "/Users/user/DNDGEN/DndGEN/dnd/portraits"
     race_name = getattr(race, "name", str(race))
-    if "<" in race_name:  # Jestli dostaneme něco jako <base.Character.Race object ...>
-      race_name = race.__class__.__name__
     race_dir = os.path.join(portraits_dir, race_name)
+    
     portrait_files = [f for f in os.listdir(race_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
-    root = tk.Tk()
-    root.geometry("500x600")
+    
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("blue")
+    root = ctk.CTk()
+    root.geometry("650x670")
     root.title(f"Výběr portrétu pro {race_name}")
-    index = tk.IntVar(value=0)
+    index = ctk.IntVar(value=0)
+    image_label = ctk.CTkLabel(root, text="")
+    image_label.pack(pady=10)
+
+    image_cache = {}    
     def update_image():
         img_path = os.path.join(race_dir, portrait_files[index.get()])
-        print(f"🖼️ Načítám obrázek: {img_path}")
         try:
-            img = Image.open(img_path)
-            img = img.resize((400, 500))
-            img_tk = ImageTk.PhotoImage(img)
-            image_label.config(image=img_tk)
-            image_label.image = img_tk  # **Důležité, jinak se obrázek nezobrazí!**
+            pil_img = Image.open(img_path).convert("RGBA").resize((500, 600))
+            ctk_img = ctk.CTkImage(light_image=pil_img, size=(500, 600))
+            image_cache["img"] = ctk_img
+            root.ctk_img = ctk_img
+            image_label.configure(image=ctk_img, text="")  # reset textu
         except Exception as e:
             print(f"❌ Chyba při načítání obrázku: {e}")
-
+            image_label.configure(text="⚠️ Nelze načíst obrázek.", image=None)
     def next_image():
         index.set((index.get() + 1) % len(portrait_files))
         update_image()
-
     def prev_image():
         index.set((index.get() - 1) % len(portrait_files))
         update_image()
-
     def select_image():
         root.selected_portrait = os.path.join(race_dir, portrait_files[index.get()])
-        root.destroy()
-
+        root.after(100, root.destroy)# ukončí mainloop
     def select_random():
         root.selected_portrait = os.path.join(race_dir, random.choice(portrait_files))
-        root.destroy()
+        root.after(200,root.destroy)  # ukončí mainloop
 
-    image_label = Label(root)
-    image_label.pack()
+    # Buttons
+    frame = ctk.CTkFrame(root)
+    frame.pack(pady=10)
 
-    update_image()  # Zobrazí první obrázek
+    ctk.CTkButton(frame, text="⬅️ Předchozí", command=prev_image).pack(side="left", padx=10)
+    ctk.CTkButton(frame, text="✅ Vybrat", command=select_image).pack(side="left", padx=10)
+    ctk.CTkButton(frame, text="🎲 Náhodně", command=select_random).pack(side="left", padx=10)
+    ctk.CTkButton(frame, text="➡️ Další", command=next_image).pack(side="left", padx=10)
+    
 
-    btn_prev = Button(root, text="⬅️ Předchozí", command=prev_image)
-    btn_prev.pack(side=tk.LEFT, padx=10)
-
-    btn_select = Button(root, text="✅ Vybrat", command=select_image)
-    btn_select.pack(side=tk.LEFT, padx=10)
-
-    btn_random = Button(root, text="🎲 Náhodně", command=select_random)
-    btn_random.pack(side=tk.LEFT, padx=10)
-
-    btn_next = Button(root, text="➡️ Další", command=next_image)
-    btn_next.pack(side=tk.LEFT, padx=10)
-
+    update_image()
     root.mainloop()
 
-    # ✅ Vrátíme vybraný portrét
-    return getattr(root, "selected_portrait")
+    return getattr(root, "selected_portrait", None)
 
 def get_saving_throws(character):
     """Vrací saving throws jako slovník: {'Strength': '+4', ...}"""
@@ -250,24 +293,51 @@ def generate_name_gui(race, gender):
     name_list = names.get(race_name, {}).get(gender, [])
     if not name_list:
         name_list = ["Default Name"]  # Provide a fallback name if the list is empty
-    
 
-    root = tk.Tk()
+    root = ctk.CTk()
     root.title("Zadej nebo vyber jméno")
+    root.geometry("400x200")
+    chosen = ctk.StringVar()
+    def select(btn, option):
+            btn.configure(fg_color="green", text="✅ Vybráno")
+            root.after(300, lambda: finish(option))
 
-    entry = tk.Entry(root)
+    def finish(option):
+            chosen.set(option)
+            root.after(200, root.destroy)  # ukončí mainloop
+
+    entry = ctk.CTkEntry(root, placeholder_text="Zadej vlastní jméno")
     entry.pack(pady=10)
-    chosen = tk.StringVar()
 
-    def confirm():
+    def confirm_entry():
         name = entry.get()
-        chosen.set(name if name else random.choice(name_list))
-        root.destroy()
+        if name.strip():
+            finish(name)
+        else:
+            finish(random.choice(name_list))
 
-    btn_random = tk.Button(root, text="🎲 Náhodné jméno", command=lambda: entry.insert(0, random.choice(name_list)))
-    btn_random.pack()
-    tk.Button(root, text="✅ Potvrdit", command=confirm).pack()
-    
+    ctk.CTkButton(root, text="✅ Potvrdit  jméno", command=confirm_entry).pack(pady=5)
+
+    # Náhodně vybrané jméno (zobrazení)
+    random_name_label = ctk.CTkLabel(root, text="", font=("Arial", 16))
+    random_name_label.pack(pady=5)
+
+    def show_random_name():
+        random_name = random.choice(name_list)
+        random_name_label.configure(text=random_name)
+        entry.delete(0, tk.END)        # Vymaže pole
+        entry.insert(0, random_name)   # Vloží náhodné jméno do entry
+
+    ctk.CTkButton(root, text="🎲 Náhodné jméno", width=300, command=show_random_name).pack(pady=10)
+
+    # Scroll seznam existujících jmen
+    frame = ctk.CTkScrollableFrame(root)
+    frame.pack(expand=True, fill="both", pady=10, padx=10)
+
+    for name in name_list:
+        btn = ctk.CTkButton(frame, text=name, width=300)
+        btn.configure(command=lambda n=name, b=btn: select(b, n))
+        btn.pack(pady=5)
 
     root.mainloop()
     return chosen.get()
@@ -323,25 +393,35 @@ def generate_character():
     char_class.apply_class_bonus(character)
     character.path = generate_path(char_class.name) if char_class.name in path_classy else None
     character.portrait = portrait # Replace with a valid default path
-
-
-    
-
-    print("\n=== VYTVOŘENÁ POSTAVA ===")
-    print(character)
-    print(f"HP: {character.hp}")  
-    print(f"Hit Dice: {character.hit_dice}")
-    print(f"Skills: {skills}")
-    print(f"Traits: {traits}")
-    print(f"Spells: {character.spells}")
-    inventory_names = [item.name if hasattr(item, "name") else str(item) for item in character.inventory]
-    print(f"Inventory: {inventory_names}")
-    print(f"AC: {set_ac(character)}")
-    print(f"Features: {character.features}")
-    print(f"Path: {character.path}")
     return character
 
-#################PDFPRENOS#################
+def display_character_info(character):
+     info_window = ctk.CTkToplevel()
+     info_window.title(f"Informace o postavě - {character.name}")
+     info_window.geometry("600x400")
+     info_window.resizable(True, True)
+     text_box = ctk.CTkTextbox(info_window, width=550, height=350, font=("Arial", 14))
+     text_box.pack(pady=10)
+     inventory_names = [item.name if hasattr(item, "name") else str(item) for item in character.inventory]
+     character_info = (
+                f"=== VYTVOŘENÁ POSTAVA ===\n"
+                f"Jméno: {character.name}\n"
+                f"Rasa: {character.race.name if hasattr(character.race, 'name') else str(character.race)}\n"
+                f"Povolání: {character.char_class.name if hasattr(character.char_class, 'name') else str(character.char_class)}\n"
+                f"Zázemí: {character.background.name if hasattr(character.background, 'name') else str(character.background)}\n"
+                f"HP: {character.hp}\n"
+                f"Hit Dice: {character.hit_dice}\n"
+                f"Skills: {character.skills}\n"
+                f"Traits: {character.trait}\n"
+                f"Spells: {character.spells}\n"
+                f"Inventory: {inventory_names}\n"
+                f"AC: {set_ac(character)}\n"
+                f"Features: {character.features}\n"
+                f"Path: {character.path}\n"
+            )
+
+     text_box.insert("1.0", character_info)
+     text_box.configure(state="disabled")  # Disable editing
 
 def calculate_stat_bonus(stat_value):
     """Vypočítá bonus na základě hodnoty statu."""
@@ -571,8 +651,83 @@ def fill_character_sheet(input_pdf, output_pdf, character, spell_limits):
             writer.write(output_file)
 
     print(f"Data byla vepsána do {output_pdf}!")
-# Příklad použití
+
+def open_character_journal(character):
+    journal_window = ctk.CTkToplevel()
+    journal_window.title(f"Deník postavy - {character.name}")
+    journal_window.geometry("600x700")
+    journal_window.resizable(True, True)
+
+    text_box = ctk.CTkTextbox(journal_window, width=550, height=600, font=("Arial", 14))
+    text_box.pack(pady=10)
+
+    # 📝 Cesta k souboru
+    journal_path = f"/Users/user/DNDGEN/DndGEN/dnd/journals/{character.name}_journal.txt"
+    os.makedirs("journals", exist_ok=True)
+
+    # 🔵 Funkce pro načtení
+    def load_journal():
+        if os.path.exists(journal_path):
+            with open(journal_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                text_box.delete("1.0", "end")
+                text_box.insert("1.0", content)
+
+    # 🔵 Funkce pro uložení
+    def save_journal():
+        with open(journal_path, "w", encoding="utf-8") as f:
+            f.write(text_box.get("1.0", "end"))
+        print(f"✅ Deník postavy {character.name} uložen!")
+
+    # 🔵 Tlačítka
+    button_frame = ctk.CTkFrame(journal_window)
+    button_frame.pack(pady=5)
+
+    ctk.CTkButton(button_frame, text="💾 Uložit", command=save_journal).pack(side="left", padx=5)
+    ctk.CTkButton(button_frame, text="🔄 Načíst", command=load_journal).pack(side="left", padx=5)
+
+def save_character_to_json(character, filename):
+    """Uloží charakter do JSON souboru."""
+    character_data = {
+        "name": character.name,
+        "race": character.race.name if hasattr(character.race, "name") else str(character.race),
+        "class": character.char_class.name if hasattr(character.char_class, "name") else str(character.char_class),
+        "background": character.background.name if hasattr(character.background, "name") else str(character.background),
+        "stats": character.stats,
+        "skills": character.skills,
+        "traits": character.trait,
+        "spells": character.spells,
+        "inventory": [item.name if hasattr(item, "name") else str(item) for item in character.inventory],
+        "hp": character.hp,
+        "hit_dice": character.hit_dice,
+        "portrait": character.portrait,
+        "path": character.path
+    }
+    with open(filename, "w") as f:
+        json.dump(character_data, f, indent=4)
+    print(f"✅ Postava {character.name} byla uložena do {filename}!")
+
+def show_character_options(character):
+    root = ctk.CTk()
+    root.title(f"Možnosti pro {character.name}")
+    root.geometry("250x200")
+    # Tlačítko pro zobrazení deníku
+    ctk.CTkButton(root, text="📜 Zobrazit informace", command=lambda: display_character_info(character)).pack(pady=10)
+
+    ctk.CTkButton(root, text="📝 Zobraz historii postavy", command=lambda: open_character_journal(character)).pack(pady=10)
+    
+    # Třeba i tlačítko na export do PDF
+    ctk.CTkButton(root, text="📜 Exportovat do PDF", command=lambda: (fill_character_sheet("/Users/user/DNDGEN/DndGEN/dnd/dnd_character_sheet.pdf", "character_sheet_filled.pdf", character, class_spell_slots[character.char_class.name]))).pack(pady=10)
+    
+    ctk.CTkButton(root, text="💬Exportovat do JSON", command=lambda: (save_character_to_json(character, "my_character.json"))).pack(pady=10)
+    root.mainloop()
+    root.destroy()
+
 character = generate_character()
-fill_character_sheet("/Users/user/DNDGEN/DndGEN/dnd/dnd_character_sheet.pdf", "character_sheet_filled.pdf", character, class_spell_slots[character.char_class.name])
+show_character_options(character)
+
+
+
+
 
 

@@ -14,22 +14,16 @@ class Character:
         self.char_spells= char_spells
         self.inventory = generate_items(self.char_class.name)
         self.features = []  # Initialize features as an empty list
-        self.spells = {"cantrips": [], "spells": []}
-        
-        
-        
-    
+        self.spells = {"cantrips": [], "spells": []} 
     def set_skills(self):
         """Spojí dovednosti z rasy, povolání a zázemí do jednoho seznamu."""
         background_skills = self.background.skills if isinstance(self.background.skills, list) else [self.background.skills]
         class_skills = self.char_class.skills if isinstance(self.char_class.skills, list) else [self.char_class.skills]
         return  background_skills + class_skills
-    
     def set_traits(self):
         race_traits = self.race.traits if isinstance(self.race.traits, list) else [self.race.traits]
         return race_traits                       
     def generate_stats(self):
-        """Generuje šest hlavních atributů (hod kostkami 4k6, nejnižší se zahodí)."""
         def roll_stat():
             rolls = [random.randint(1, 6) for _ in range(4)]
             return sum(sorted(rolls)[1:])  # Sečte 3 nejvyšší hody
@@ -277,15 +271,15 @@ hit_dice = {
     "Warlock": "1d8",
 }
 names = {
-    "Elf": {"Muž": ["Aerendil", "Thalion", "Legolas"], "Žena": ["Arwen", "Lúthien", "Galadriel"]},
-    "Dwarf": {"Muž": ["Thorin", "Balin"], "Žena": ["Dis", "Tana"]},
-    "Human": {"Muž": ["Aragorn", "Boromir"], "Žena": ["Eowyn", "Elanor"]},
-    "Halfling": {"Muž": ["Frodo", "Bilbo"], "Žena": ["Rosie", "Daisy"]},
-    "Kabold": {"Muž": ["Poro", "Koro"], "Žena": ["Saassraa", "Zaassraa"]},
-    "Gith": {"Muž": ["Zerthimon", "Vlaak"], "Žena": ["Vlaakith", "Layzel"]},
-    "Tiefling": {"Muž": ["Morthos", "Kael"], "Žena": ["Lilith", "Morrigan"]},
-    "Dragonborn": {"Muž": ["Bahamut", "Korvax"], "Žena": ["Andarna", "Vey"]},
-    "Gnome": {"Muž": ["Rurik", "Boddynock"], "Žena": ["Bimpnottin", "Breena"]}
+    "Elf": {"Muž": ["Aerendil", "Thalion", "Legolas", "Astarion"], "Žena": ["Arwen", "Lúthien", "Galadriel"]},
+    "Dwarf": {"Muž": ["Thorin", "Balin", "Dwalin", "Kolin"], "Žena": ["Dis", "Tana", " Gilda", "Hilda"]},
+    "Human": {"Muž": ["Aragorn", "Boromir","Xaden","Dante"], "Žena": ["Eowyn", "Elanor", "Morrigan", "Isolde"]},
+    "Halfling": {"Muž": ["Frodo", "Bilbo", "Sam", "Nero"], "Žena": ["Rosie", "Daisy", "Lobelia", "Belladonna"]},
+    "Kabold": {"Muž": ["Poro", "Koro", "Folo", "Moro"], "Žena": ["Saassraa", "Zaassraa","Lala", "Zaza"]},
+    "Gith": {"Muž": ["Zerthimon", "Vlaak", "Zero", "V"], "Žena": ["Vlaakith", "Layzel", "Zariel", "Z"]},
+    "Tiefling": {"Muž": ["Morthos", "Kael","Kain","Morothos"], "Žena": ["Lilith", "Nail","Melina", "Kaela"]},
+    "Dragonborn": {"Muž": ["Bahamut", "Korvax","Tarahrn"], "Žena": ["Andarna", "Vey", "Zyra", "Khalia"]},
+    "Gnome": {"Muž": ["Rurik", "Boddynock", "Prop","Flock"], "Žena": ["Bimpnottin", "Breena", "Zook", "Nim"]},
 }
 skill_positions = {
         "Acrobatics": (102, 462),
