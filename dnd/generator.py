@@ -1,4 +1,4 @@
-from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions, saving_throw_positions, class_items, class_saving_throws, Weapon, Armor, potions_list, magic_items_list, path_classy, stats_positions, stat_skills, classes
+from base import races, Class, backgrounds, Character, classes, hit_dice, names, skill_positions, trait_descriptions, spells_by_class, class_spell_slots, spells_descriptions, cantripps_descriptions, saving_throw_positions, class_items, class_saving_throws, Weapon, Armor, potions_list, magic_items_list, path_classy, stats_positions, stat_skills, stats_names
 import random
 import textwrap
 from functools import partial
@@ -7,13 +7,12 @@ import os
 from customtkinter import *
 import customtkinter as ctk
 import tkinter as tk
-from tkinter import Label, Button
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from PIL import Image, ImageTk
 import json
 
-class_spells = spells_by_class
+"Gui pro bazove charackteristiky"
 def choose_option_gui(options, title="Vyber možnost"):
     ctk.set_appearance_mode("dark")  # nebo "light"
     ctk.set_default_color_theme("blue")  # nebo "blue"
@@ -21,8 +20,8 @@ def choose_option_gui(options, title="Vyber možnost"):
 
     root = ctk.CTk()
     root.title(title)
-    root.geometry("400x600")
-    root.resizable(False, True)
+    root.geometry("400x530")
+    root.resizable(False, False)
 
     chosen = ctk.StringVar()
     root.already_selected = False
@@ -35,7 +34,7 @@ def choose_option_gui(options, title="Vyber možnost"):
     def select(btn, option):
         if not root.already_selected:   # ⬅️ Přidat tuto kontrolu
          root.already_selected = True
-         btn.configure(fg_color="green", text="✅ Vybráno")
+         btn.configure(fg_color="green", text="✅ Vybráno", )
          root.after(300, lambda: finish(option))
 
     def finish(option):
@@ -119,6 +118,129 @@ def calculate_hit_points(char_class, constitution_mod):
     except (ValueError, IndexError):
         raise ValueError(f"Neplatný formát hit dice: {dice}")
     return dice, max_hp
+
+def roll_single_stat_animation(label, callback):
+    roll_cycles = random.randint(10, 20)  # kolik krát čísla "točit"
+    rolls = []
+
+    def animate(cycle=0):
+        nonlocal rolls
+        rolls = [random.randint(1, 6) for _ in range(4)]
+        label.configure(text=f"🎲 {rolls}")
+        if cycle < roll_cycles:
+            label.after(50, lambda: animate(cycle + 1))
+        else:
+            rolls.remove(min(rolls))
+            total = sum(rolls)
+            callback(total)
+
+    animate()
+
+def generate_stats_gui_with_spin_and_build_selection(char_class_name=None):
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("blue")
+
+    root = ctk.CTk()
+    root.title("🎲 Kostky")
+    root.geometry("300x460")
+
+    label_title = ctk.CTkLabel(root, text="🎲 Hazeni kostky", font=("Arial", 20))
+    label_title.pack(pady=10)
+
+    stat_labels = []
+    stat_values = []
+
+    for stat in stats_names:
+        frame = ctk.CTkFrame(root)
+        frame.pack(pady=5)
+
+        lbl = ctk.CTkLabel(frame, text=f"⏳", font=("Arial", 16))
+        lbl.pack()
+        stat_labels.append(lbl)
+
+    def start_roll():
+        stat_values.clear()
+
+        def roll_next(index=0):
+            if index < len(stat_labels):
+                roll_single_stat_animation(stat_labels[index], lambda val: finish_stat(val, index))
+            else:
+                finalize()
+
+        def finish_stat(val, index):
+            stat_labels[index].configure(text=f"{val}")
+            stat_values.append((stats_names[index], val))
+            roll_next(index + 1)
+
+        def finalize():
+            roll_button.configure(state="disabled")
+            
+
+        roll_next()
+
+
+    roll_button = ctk.CTkButton(root, text="🎲 Hoď kostky!", command=start_roll)
+    roll_button.pack(pady=20)
+
+    ctk.CTkButton(root, text="✅ Potvrdit a Zavřít", command=root.destroy).pack(pady=10)
+
+    root.mainloop()
+
+    return stat_values
+
+# ⚔️ PRIORITY podle classu
+CLASS_PRIORITIES = {
+    "Fighter": ["Strength", "Constitution", "Dexterity", "Wisdom", "Intelligence", "Charisma"],
+    "Wizard": ["Intelligence", "Constitution", "Dexterity", "Wisdom", "Charisma", "Strength"],
+    "Rogue": ["Dexterity", "Intelligence", "Charisma", "Constitution", "Wisdom", "Strength"],
+    "Cleric": ["Wisdom", "Constitution", "Strength", "Charisma", "Dexterity", "Intelligence"],
+    "Barbarian": ["Strength", "Constitution", "Dexterity", "Wisdom", "Charisma", "Intelligence"],
+    "Sorcerer": ["Charisma", "Constitution", "Dexterity", "Wisdom", "Intelligence", "Strength"],
+    "Paladin": ["Strength", "Charisma", "Constitution", "Wisdom", "Dexterity", "Intelligence"],
+    "Ranger": ["Dexterity", "Wisdom", "Constitution", "Strength", "Charisma", "Intelligence"],
+    "Druid": ["Wisdom", "Constitution", "Dexterity", "Intelligence", "Charisma", "Strength"],
+    "Warlock": ["Charisma", "Constitution", "Dexterity", "Wisdom", "Intelligence", "Strength"],
+    "Monk": ["Dexterity", "Wisdom", "Constitution", "Charisma", "Intelligence", "Strength"],
+    "Bard": ["Charisma", "Dexterity", "Constitution", "Wisdom", "Intelligence", "Strength"],
+    
+}
+
+def assign_stats_gui(char_class_name):
+    stats = generate_stats_gui_with_spin_and_build_selection(char_class_name)
+    available_stats = sorted(stats, key=lambda x: x[1], reverse=True)  # Seřadíme podle hodnoty
+    
+
+    priorities = CLASS_PRIORITIES.get(char_class_name, ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"])
+
+    assignments = {priority: available_stats[i][1] for i, priority in enumerate(priorities)}
+
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("blue")
+
+    root = ctk.CTk()
+    root.title(f"Přiřazení statů pro {char_class_name}")
+    root.geometry("400x500")
+
+    text = ""
+    for stat, value in assignments.items():
+        text += f"{stat}:{value}\n"
+
+    label = ctk.CTkLabel(root, text="📜 Vygenerovane staty :", font=("Arial", 18))
+    label.pack(pady=10)
+
+    textbox = ctk.CTkTextbox(root, height=350, font=("Arial", 18))
+    textbox.pack(pady=10)
+    textbox.insert("1.5", text)
+    textbox.configure(state="disabled")
+
+    def confirm():
+        root.destroy()
+
+    ctk.CTkButton(root, text="✅ Potvrdit", command=confirm).pack(pady=20)
+
+    root.mainloop()
+
+    return assignments
 
 def select_spells_gui(char_class):
     class_name = char_class.name
@@ -355,6 +477,7 @@ def get_skills(character):
     return bonus_skills
 
 def set_ac(character):
+
     """Nastaví AC (Armor Class) postavy na základě jejího vybavení."""
     dex_bonus = calculate_stat_bonus(character.stats.get("Dexterity", 0))
     base_ac = 10 + dex_bonus  # Základní AC bez brnění
@@ -375,16 +498,20 @@ def set_ac(character):
 
 def generate_character():
     print("\n=== GENERÁTOR POSTAV D&D 5E ===\n")
-
-    race = choose_option_gui(races, "Vyber rasu:")
+    race_key = choose_option_gui(list(races.keys()), "Vyber rasu:")  # hráč vybírá jméno (text)
+    race = races[race_key]
     char_class = choose_option_gui(classes, "Vyber povolání:")
     background = choose_option_gui(backgrounds, "Vyber zázemí:")
     gender = choose_gender_gui()
     name = generate_name_gui(race, gender)
     portrait = choose_portrait_gui(race)
+    stats = assign_stats_gui(char_class.name)
+    stats_dict = dict(stats)
+    stats_with_race = race.apply_modifiers(stats_dict) 
     skills = []  # Initialize skills
     traits = []  # Initialize traits
-    character = Character(name, race, char_class, background, hit_dice, skills, traits, generate_items= generate_items)
+    character = Character( name, race, char_class, background, hit_dice, skills, traits, generate_items= generate_items)
+    character.stats = stats_with_race
     constitution_mod = character.stats.get("Constitution", 0)  # Modifikátor Constitution
     character.hit_dice, character.hp = calculate_hit_points(char_class, constitution_mod)
     skills = character.set_skills()
@@ -398,7 +525,7 @@ def generate_character():
 def display_character_info(character):
      info_window = ctk.CTkToplevel()
      info_window.title(f"Informace o postavě - {character.name}")
-     info_window.geometry("600x400")
+     info_window.geometry("700x400")
      info_window.resizable(True, True)
      text_box = ctk.CTkTextbox(info_window, width=550, height=350, font=("Arial", 14))
      text_box.pack(pady=10)
@@ -418,6 +545,7 @@ def display_character_info(character):
                 f"AC: {set_ac(character)}\n"
                 f"Features: {character.features}\n"
                 f"Path: {character.path}\n"
+                f"Stats: {character.stats}\n"
             )
 
      text_box.insert("1.0", character_info)

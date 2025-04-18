@@ -5,8 +5,6 @@ class Character:
         self.race = race
         self.char_class = char_class
         self.background = background
-        self.stats = self.generate_stats()
-        self.stats = self.race.apply_modifiers(self.stats)  # Aplikuje bonusy rasy
         self.hit_dice = hit_dice[char_class.name]
         self.max_hp = random.randint(1, int(self.hit_dice[0]))  
         self.skills = self.set_skills()
@@ -16,48 +14,12 @@ class Character:
         self.features = []  # Initialize features as an empty list
         self.spells = {"cantrips": [], "spells": []} 
     def set_skills(self):
-        """Spojí dovednosti z rasy, povolání a zázemí do jednoho seznamu."""
         background_skills = self.background.skills if isinstance(self.background.skills, list) else [self.background.skills]
         class_skills = self.char_class.skills if isinstance(self.char_class.skills, list) else [self.char_class.skills]
         return  background_skills + class_skills
     def set_traits(self):
         race_traits = self.race.traits if isinstance(self.race.traits, list) else [self.race.traits]
         return race_traits                       
-    def generate_stats(self):
-        def roll_stat():
-            rolls = [random.randint(1, 6) for _ in range(4)]
-            return sum(sorted(rolls)[1:])  # Sečte 3 nejvyšší hody
-
-        stats = [roll_stat() for _ in range(6)]
-        stats.sort(reverse=True)  
-        primary_atributes = {
-        "Fighter": ["Strength", "Constitution"],
-        "Wizard": ["Intelligence", "Dexterity"],
-        "Rogue": ["Dexterity", "Charisma"],
-        "Cleric": ["Wisdom", "Strength"],
-        "Bard": ["Charisma", "Dexterity"],
-        "Ranger": ["Dexterity", "Wisdom"],
-        "Barbarian": ["Strength", "Constitution"],
-        "Sorcerer": ["Charisma", "Constitution"],
-        "Monk": ["Dexterity", "Wisdom"],
-        "Paladin": ["Strength", "Charisma"],
-        "Druid": ["Wisdom", "Constitution"],
-        "Warlock": ["Charisma", "Wisdom"],
-        }
-        class_name = self.char_class.name
-        primary = primary_atributes.get(class_name, [])
-        attributes = {"Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"}
-        stats_dict = {attr:0 for attr in attributes}
-        for attr in primary:
-            stats_dict[attr] = stats.pop(0)
-        for attr in attributes:
-            if stats_dict[attr] == 0:
-                stats_dict[attr] = stats.pop(0)
-        return stats_dict
-    def __str__(self):
-        """Vrací statblock postavy jako text."""
-        stats = "\n".join(f"{key}: {value}" for key, value in self.stats.items())
-        return f"Name: {self.name}\nRace: {self.race.name}\nClass: {self.char_class.name}\nBackground: {self.background.name}\nStats:\n{stats}"
     class Race:
         def __init__(self, name, stat_modifiers, traits=[]):
             self.name = name
@@ -403,7 +365,7 @@ cantripps_descriptions = {
     "Mending": "You repair a broken object, restoring up to 1 foot of damage.",
 
 }
-
+stats_names = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
 class Item:
     def __init__(self, name, weight, value):
         self.name = name
