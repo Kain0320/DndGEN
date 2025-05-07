@@ -36,7 +36,7 @@ class Character:
                     stats[stat] += bonus
             return stats
 
-races = {
+races = {   
     "Human": Character.Race("Human", {"All": +1},["Versatile"]),
     "Elf": Character.Race("Elf", {"Dexterity": +2},["Darkvision", "Fey Ancestry"]),
     "Dwarf": Character.Race("Dwarf", {"Constitution": +2},["Darkvision", "Dwarven Resilience"]),
@@ -151,7 +151,6 @@ stat_skills = {
     "Stealth": "Dexterity",
     "Survival": "Wisdom"
 }
-
 classes = {
     "Fighter": Class("Fighter", "1d10", ["Longsword", "Shield"], ["Athletics", "Intimidation"]),
     "Wizard": Class("Wizard", "1d6", ["Dagger", "Spellbook"], ["Arcana", "History"]),
@@ -476,6 +475,5 @@ magic_items_list = [
     MagicItem("Feather Token",0.1, 25, "Activate Feather Fall once per day"),
     MagicItem("Ring of Mind Read ",0.1,300, "Read surface thoughts of a creature (1/day)"),
 ]
-
 
 

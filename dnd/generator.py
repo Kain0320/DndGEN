@@ -14,8 +14,8 @@ import json
 
 "Gui pro bazove charackteristiky"
 def choose_option_gui(options, title="Vyber možnost"):
-    ctk.set_appearance_mode("dark")  # nebo "light"
-    ctk.set_default_color_theme("blue")  # nebo "blue"
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("blue")
     ctk.set_widget_scaling(1.0)
 
     root = ctk.CTk()
@@ -23,8 +23,8 @@ def choose_option_gui(options, title="Vyber možnost"):
     root.geometry("400x530")
     root.resizable(False, False)
 
-    chosen = ctk.StringVar()
-    root.already_selected = False
+    chosen = {"object": None}
+    already_selected = [False]
 
     if isinstance(options, dict):
         display_list = list(options.values())
@@ -32,16 +32,21 @@ def choose_option_gui(options, title="Vyber možnost"):
         display_list = options
 
     def select(btn, option):
-        if not root.already_selected:   # ⬅️ Přidat tuto kontrolu
-         root.already_selected = True
-         btn.configure(fg_color="green", text="✅ Vybráno", )
-         root.after(300, lambda: finish(option))
+       if not already_selected[0]:
+         already_selected[0] = True
+         chosen["object"] = option
+         btn.configure(fg_color="green", text="✅ Vybráno")
 
-    def finish(option):
-        chosen.set(option)
-        root.selected_object = option
-        root.after(100,root.destroy)  # ukončí mainloop
-  
+         
+         def safe_close():
+             try:
+                 root.quit()
+             except:
+                 pass
+
+         root.after(300, safe_close)
+
+
     frame = ctk.CTkScrollableFrame(root)
     frame.pack(expand=True, fill="both", pady=10, padx=10)
 
@@ -50,22 +55,37 @@ def choose_option_gui(options, title="Vyber možnost"):
         btn = ctk.CTkButton(frame, text=name, width=300)
         btn.configure(command=partial(select, btn, option))
         btn.pack(pady=5)
-        
-    def random_select():
-        if not root.already_selected:
-            root.already_selected = True
-            finish(random.choice(display_list))
 
-    # Náhodné tlačítko (bez animace nebo s modrým efektem globálně)
+    def random_select():
+     if not already_selected[0]:
+         already_selected[0] = True
+         chosen["object"] = random.choice(display_list)
+
+         def safe_close():
+             try:
+                root.quit()
+             except:
+                 pass
+
+         root.after(300, safe_close)
+
     ctk.CTkButton(root, text="🎲 Náhodně", width=300, command=random_select).pack(pady=10)
+
     try:
-       root.mainloop()
+        root.mainloop()
     except Exception as e:
-        if any(keyword in str(e) for keyword in ["update", "click_animation", "dpi_scaling", "update"]):
-           pass  # ticho
+        if any(x in str(e) for x in ["click_animation", "dpi_scaling", "update"]):
+            print("⚠️ Potlačená systémová chyba:", e)
         else:
-           raise
-    return getattr(root, "selected_object", random.choice(display_list))
+            raise
+    finally:
+        try:
+            root.destroy()
+        except:
+            pass
+
+    return chosen["object"] or random.choice(display_list)
+
 
 def choose_gender_gui():
     ctk.set_appearance_mode("dark")
@@ -177,14 +197,23 @@ def generate_stats_gui_with_spin_and_build_selection(char_class_name=None):
             
 
         roll_next()
-
+    
+    def clean_close():
+        root.after(200, root.destroy)
 
     roll_button = ctk.CTkButton(root, text="🎲 Hoď kostky!", command=start_roll)
     roll_button.pack(pady=20)
 
-    ctk.CTkButton(root, text="✅ Potvrdit a Zavřít", command=root.destroy).pack(pady=10)
+    ctk.CTkButton(root, text="✅ Potvrdit a Zavřít", command=clean_close).pack(pady=10)
 
-    root.mainloop()
+
+    try:
+        root.mainloop()
+    except Exception as e:
+        if "click_animation" in str(e) or "dpi_scaling" in str(e):
+            print("⚠️ Potlačená systémová chyba:", e)
+        else:
+            raise
 
     return stat_values
 
@@ -207,40 +236,158 @@ CLASS_PRIORITIES = {
 
 def assign_stats_gui(char_class_name):
     stats = generate_stats_gui_with_spin_and_build_selection(char_class_name)
-    available_stats = sorted(stats, key=lambda x: x[1], reverse=True)  # Seřadíme podle hodnoty
-    
+    available_values = sorted([val for _, val in stats], reverse=True)
 
     priorities = CLASS_PRIORITIES.get(char_class_name, ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"])
+    stat_names = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
 
-    assignments = {priority: available_stats[i][1] for i, priority in enumerate(priorities)}
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("blue")
+    root = ctk.CTk()
+    root.title(f"✍️ Přidělení statů pro {char_class_name}")
+    root.geometry("300x400")
 
+    ctk.CTkLabel(root, text="📜 Vyber, jak chceš staty přiřadit:", font=("Arial", 16)).pack(pady=10)
+
+    method_var = ctk.StringVar(value="auto")
+
+    def choose_auto():
+        method_var.set("auto")
+        root.after(200, root.quit)
+
+    def choose_manual():
+        method_var.set("manual")
+        root.after(200, root.quit)
+
+    def choose_point_buy():
+        method_var.set("point_buy")
+        root.after(200, root.quit)
+
+    ctk.CTkButton(root, text="🎲 Automaticky podle classy", command=choose_auto).pack(pady=5)
+    ctk.CTkButton(root, text="✍️ Manuálně přidělit staty", command=choose_manual).pack(pady=5)
+    ctk.CTkButton(root, text="📊 Point Buy (27 bodů)", command=choose_point_buy).pack(pady=5)
+
+    root.mainloop()
+    root.destroy()
+
+    selected_method = method_var.get()
+
+    # 1️⃣ AUTO – jako dřív
+    if selected_method == "auto":
+        assignments = {priority: available_values[i] for i, priority in enumerate(priorities)}
+        return assignments
+
+    # 2️⃣ MANUÁL
+    elif selected_method == "manual":
+        return manual_assign_gui(stat_names, available_values)
+
+    # 3️⃣ POINT BUY
+    elif selected_method == "point_buy":
+        return open_point_buy_gui()
+
+    # fallback
+    return {stat: 10 for stat in stat_names}
+
+def manual_assign_gui(stat_names, values):
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("blue")
+    root = ctk.CTk()
+    root.title("Manuální přidělení statů")
+    root.geometry("500x600")
+
+    assignments = {}
+    dropdowns = {}
+
+    for stat in stat_names:
+        frame = ctk.CTkFrame(root)
+        frame.pack(pady=5)
+        ctk.CTkLabel(frame, text=stat, width=100).pack(side="left", padx=5)
+
+        var = ctk.StringVar(value=str(values[0]))
+        dropdown = ctk.CTkOptionMenu(frame, values=[str(v) for v in values], variable=var)
+        dropdown.pack(side="left")
+        dropdowns[stat] = var
+
+    error_label = ctk.CTkLabel(root, text="", text_color="red")
+    error_label.pack()
+
+    def confirm():
+        chosen = [v.get() for v in dropdowns.values()]
+        if sorted(map(int, chosen)) != sorted(values):
+            error_label.configure(text="❌ Staty musí být jedinečné a použít všechny hodnoty.")
+        else:
+            for stat in stat_names:
+                assignments[stat] = int(dropdowns[stat].get())
+            root.after(200, root.quit)
+
+    ctk.CTkButton(root, text="✅ Potvrdit", command=confirm).pack(pady=20)
+    root.mainloop()
+    root.destroy()
+    return assignments
+STAT_NAMES = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
+MAX_POINTS = 27
+POINT_BUY_COST = {8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9}
+def calculate_total_cost(stats):
+    return sum(POINT_BUY_COST[val] for val in stats.values())
+def open_point_buy_gui():
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("blue")
 
     root = ctk.CTk()
-    root.title(f"Přiřazení statů pro {char_class_name}")
-    root.geometry("400x500")
+    root.title("🧠 Point Buy systém")
+    root.geometry("500x600")
 
-    text = ""
-    for stat, value in assignments.items():
-        text += f"{stat}:{value}\n"
+    stats = {stat: 8 for stat in STAT_NAMES}
+    stat_labels = {}
+    remaining_points_label = ctk.CTkLabel(root, text="", font=("Arial", 16))
+    remaining_points_label.pack(pady=10)
 
-    label = ctk.CTkLabel(root, text="📜 Vygenerovane staty :", font=("Arial", 18))
-    label.pack(pady=10)
+    def update_display():
+        total_cost = calculate_total_cost(stats)
+        remaining = MAX_POINTS - total_cost
+        remaining_points_label.configure(text=f"Zbývá bodů: {remaining}")
+        for stat in STAT_NAMES:
+            val = stats[stat]
+            cost = POINT_BUY_COST.get(val, "❌")
+            stat_labels[stat].configure(text=f"{stat}: {val} (náklady: {cost})")
 
-    textbox = ctk.CTkTextbox(root, height=350, font=("Arial", 18))
-    textbox.pack(pady=10)
-    textbox.insert("1.5", text)
-    textbox.configure(state="disabled")
+    def increase(stat):
+        if stats[stat] < 15:
+            new_val = stats[stat] + 1
+            if calculate_total_cost({**stats, stat: new_val}) <= MAX_POINTS:
+                stats[stat] = new_val
+                update_display()
+
+    def decrease(stat):
+        if stats[stat] > 8:
+            stats[stat] -= 1
+            update_display()
+
+    for stat in STAT_NAMES:
+        frame = ctk.CTkFrame(root)
+        frame.pack(pady=5)
+
+        btn_dec = ctk.CTkButton(frame, text="➖", width=40, command=lambda s=stat: decrease(s))
+        btn_dec.pack(side="left", padx=5)
+
+        label = ctk.CTkLabel(frame, text="", font=("Arial", 16), width=250)
+        label.pack(side="left", padx=5)
+        stat_labels[stat] = label
+
+        btn_inc = ctk.CTkButton(frame, text="➕", width=40, command=lambda s=stat: increase(s))
+        btn_inc.pack(side="left", padx=5)
+
+    update_display()
 
     def confirm():
-        root.destroy()
+        root.selected_stats = stats.copy()
+        root.after(200, root.quit)
 
     ctk.CTkButton(root, text="✅ Potvrdit", command=confirm).pack(pady=20)
-
     root.mainloop()
+    root.destroy()
 
-    return assignments
+    return getattr(root, "selected_stats", None)
 
 def select_spells_gui(char_class):
     class_name = char_class.name
@@ -290,9 +437,9 @@ def select_spells_gui(char_class):
 
             try:
                 img = Image.open(spell_path).resize((350, 450))
-                img_tk = ImageTk.PhotoImage(img)
-                images[spell_name] = img_tk
-                ctk.CTkLabel(frame_inner, image=img_tk, text="").pack()
+                img_ctk = ctk.CTkImage(light_image=img, size=(350, 450))
+                images[spell_name] = img_ctk
+                ctk.CTkLabel(frame_inner, image=img_ctk, text="").pack()
             except:
                 ctk.CTkLabel(frame_inner, text=f"{spell_name} (bez obrázku)").pack()
 
@@ -304,10 +451,16 @@ def select_spells_gui(char_class):
             if len(selected_local) < limit:
                 ctk.CTkMessagebox.show_error("Chyba", f"Musíte vybrat alespoň {limit} položek.")
             else:
-                root.destroy()
+                root.after(200, lambda: root.destroy())
 
         ctk.CTkButton(root, text="✅ Potvrdit", command=confirm_selection).pack(pady=10)
-        root.mainloop()
+        try:
+            root.mainloop()
+        except Exception as e:
+            if "click_animation" in str(e) or "dpi_scaling" in str(e):
+                print("⚠️ Potlačená systémová chyba:", e)
+            else:
+                raise
         return selected_local
 
     # Výběr cantripů
@@ -334,46 +487,59 @@ def generate_items(char_class_name):
 
     return items  + [potion, magic_item]
 
-def choose_portrait_gui(race):
+def choose_portrait_gui(race, gender):
     portraits_dir = "/Users/user/DNDGEN/DndGEN/dnd/portraits"
     race_name = getattr(race, "name", str(race))
-    race_dir = os.path.join(portraits_dir, race_name)
-    
-    portrait_files = [f for f in os.listdir(race_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
-    
+    gender_dir = os.path.join(portraits_dir, race_name, gender)
+
+    if not os.path.exists(gender_dir):
+        print(f"❌ Složka pro {race_name} a {gender} neexistuje.")
+        return None
+
+    portrait_files = [f for f in os.listdir(gender_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
+
+    if not portrait_files:
+        print(f"❌ Žádné portréty nenalezeny pro {race_name} a {gender}.")
+        return None
+
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("blue")
     root = ctk.CTk()
     root.geometry("650x670")
-    root.title(f"Výběr portrétu pro {race_name}")
+    root.title(f"Výběr portrétu pro {race_name} ({gender})")
     index = ctk.IntVar(value=0)
     image_label = ctk.CTkLabel(root, text="")
     image_label.pack(pady=10)
 
-    image_cache = {}    
+    image_cache = {}
+
     def update_image():
-        img_path = os.path.join(race_dir, portrait_files[index.get()])
+        img_path = os.path.join(gender_dir, portrait_files[index.get()])
         try:
             pil_img = Image.open(img_path).convert("RGBA").resize((500, 600))
             ctk_img = ctk.CTkImage(light_image=pil_img, size=(500, 600))
             image_cache["img"] = ctk_img
             root.ctk_img = ctk_img
-            image_label.configure(image=ctk_img, text="")  # reset textu
+            image_label.configure(image=ctk_img, text="")
         except Exception as e:
             print(f"❌ Chyba při načítání obrázku: {e}")
             image_label.configure(text="⚠️ Nelze načíst obrázek.", image=None)
+
     def next_image():
         index.set((index.get() + 1) % len(portrait_files))
         update_image()
+
     def prev_image():
         index.set((index.get() - 1) % len(portrait_files))
         update_image()
+
     def select_image():
-        root.selected_portrait = os.path.join(race_dir, portrait_files[index.get()])
-        root.after(100, root.destroy)# ukončí mainloop
+        root.selected_portrait = os.path.join(gender_dir, portrait_files[index.get()])
+        root.after(100, root.destroy)
+
     def select_random():
-        root.selected_portrait = os.path.join(race_dir, random.choice(portrait_files))
-        root.after(200,root.destroy)  # ukončí mainloop
+        root.selected_portrait = os.path.join(gender_dir, random.choice(portrait_files))
+        root.after(200, root.destroy)
 
     # Buttons
     frame = ctk.CTkFrame(root)
@@ -383,7 +549,6 @@ def choose_portrait_gui(race):
     ctk.CTkButton(frame, text="✅ Vybrat", command=select_image).pack(side="left", padx=10)
     ctk.CTkButton(frame, text="🎲 Náhodně", command=select_random).pack(side="left", padx=10)
     ctk.CTkButton(frame, text="➡️ Další", command=next_image).pack(side="left", padx=10)
-    
 
     update_image()
     root.mainloop()
@@ -413,8 +578,6 @@ def generate_path(char_class_name):
 def generate_name_gui(race, gender):
     race_name = race.name if hasattr(race, "name") else str(race)
     name_list = names.get(race_name, {}).get(gender, [])
-    if not name_list:
-        name_list = ["Default Name"]  # Provide a fallback name if the list is empty
 
     root = ctk.CTk()
     root.title("Zadej nebo vyber jméno")
@@ -504,7 +667,7 @@ def generate_character():
     background = choose_option_gui(backgrounds, "Vyber zázemí:")
     gender = choose_gender_gui()
     name = generate_name_gui(race, gender)
-    portrait = choose_portrait_gui(race)
+    portrait = choose_portrait_gui(race, gender)
     stats = assign_stats_gui(char_class.name)
     stats_dict = dict(stats)
     stats_with_race = race.apply_modifiers(stats_dict) 
@@ -848,8 +1011,9 @@ def show_character_options(character):
     ctk.CTkButton(root, text="📜 Exportovat do PDF", command=lambda: (fill_character_sheet("/Users/user/DNDGEN/DndGEN/dnd/dnd_character_sheet.pdf", "character_sheet_filled.pdf", character, class_spell_slots[character.char_class.name]))).pack(pady=10)
     
     ctk.CTkButton(root, text="💬Exportovat do JSON", command=lambda: (save_character_to_json(character, "my_character.json"))).pack(pady=10)
+
+    ctk.CTkButton(root, text="❌ Zavřít generator", command=root.destroy).pack(pady=10)
     root.mainloop()
-    root.destroy()
 
 character = generate_character()
 show_character_options(character)
