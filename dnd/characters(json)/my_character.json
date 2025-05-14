@@ -1,0 +1,36 @@
+{
+    "name": "fsgsfg",
+    "race": "Human",
+    "class": "Barbarian",
+    "background": "Criminal",
+    "stats": {
+        "Strength": 15,
+        "Constitution": 14,
+        "Dexterity": 13,
+        "Wisdom": 13,
+        "Charisma": 12,
+        "Intelligence": 10
+    },
+    "skills": [
+        "Stealth",
+        "Deception",
+        "Athletics",
+        "Intimidation"
+    ],
+    "traits": [
+        "Versatile"
+    ],
+    "spells": {
+        "cantrips": [],
+        "spells": []
+    },
+    "inventory": [
+        "Greataxe",
+        "Potion of Climbing",
+        "Ring of Minor Invisibility"
+    ],
+    "hp": 26,
+    "hit_dice": "1d12",
+    "portrait": "/Users/user/DNDGEN/DndGEN/dnd/portraits/Human/Capture-2025-04-10-082156.png",
+    "path": null
+}

@@ -4,19 +4,98 @@ import textwrap
 from functools import partial
 import PyPDF2
 import os
+import sys
 from customtkinter import *
 import customtkinter as ctk
 import tkinter as tk
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
-from PIL import Image, ImageTk
+from PIL import Image
+from tkinter import filedialog, messagebox
 import json
+
+
+
+def show_main_menu():
+    """Zobrazí hlavní menu aplikace."""
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("blue")
+    root = ctk.CTk()
+    root.geometry("400x300")
+    root.title("🛡️ DnD Generátor Postav")
+    def safe_destroy():
+      root.after(200, root.destroy)
+
+    ctk.CTkLabel(root, text="Hello in DND generator!", font=("Arial", 20)).pack(pady=20)
+    ctk.CTkButton(root, text="🎲 Vytvořit novou postavu", command=lambda: [root.after(150,safe_destroy), generate_character()]).pack(pady=10)
+    # ctk.CTkButton(root, text="📂 Načíst postavu ze souboru", command=lambda: [load_character_from_json()]).pack(pady=10)
+    ctk.CTkButton(root, text="❌ Konec", command=sys.exit).pack(pady=10)
+
+    try:
+      root.mainloop()
+    except Exception as e:
+        if any(sub in str(e) for sub in [
+          "click_animation", "dpi_scaling", "invalid command name", "after script"]):
+          print("⚠️ Potlačená systémová chyba:", e)
+        else:
+          raise
+
+
+
+# def load_character_from_json():
+#     file_path = filedialog.askopenfilename(
+#         title="Vyber JSON soubor postavy",
+#         filetypes=[("JSON soubory", "*.json")]
+#     )
+#     if not file_path:
+#         return
+
+#     with open(file_path, "r") as f:
+#         data = json.load(f)
+
+#     race = races.get(data["race"])
+
+#     # Convert class name string to class object
+#     char_class = next((cls for cls in classes if getattr(cls, "name", None) == data["class"]), None)
+
+#     background = next((bg for bg in backgrounds if getattr(bg, "name", None) == data["background"]), None)
+
+#     character = Character(
+#         name=data["name"],
+#         race=race,
+#         char_class=char_class,
+#         background=background,
+#         hit_dice=hit_dice,
+#         skills=[],
+#         traits=[],
+#         generate_items=generate_items
+#     )
+
+#     character.stats = data["stats"]
+#     stats_with_race = race.apply_modifiers(character.stats)
+#     character.stats = stats_with_race
+#     character.inventory = [item if isinstance(item, str) else getattr(item, "name", str(item)) for item in data.get("inventory", [])]
+#     character.portrait = data.get("portrait")
+#     character.path = data.get("path")
+#     character.features = data.get("features", [])
+#     character.trait = data.get("traits", [])
+#     character.skills = data.get("skills", [])
+#     character.spells = data.get("spells", {})
+#     char_class = classes.get(data["class"])
+#     # Apply class-specific bonuses
+#     if hasattr(char_class, "apply_class_bonus"):
+#         char_class.apply_class_bonus(character)
+#     show_character_options(character)
+
+
+
+
 
 "Gui pro bazove charackteristiky"
 def choose_option_gui(options, title="Vyber možnost"):
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("blue")
-    ctk.set_widget_scaling(1.0)
+    
 
     root = ctk.CTk()
     root.title(title)
@@ -659,6 +738,8 @@ def set_ac(character):
 
     return base_ac  # Pokud není žádné brnění, vrátí základní AC
 
+
+# generetor postavy
 def generate_character():
     print("\n=== GENERÁTOR POSTAV D&D 5E ===\n")
     race_key = choose_option_gui(list(races.keys()), "Vyber rasu:")  # hráč vybírá jméno (text)
@@ -683,7 +764,7 @@ def generate_character():
     char_class.apply_class_bonus(character)
     character.path = generate_path(char_class.name) if char_class.name in path_classy else None
     character.portrait = portrait # Replace with a valid default path
-    return character
+    show_character_options(character)
 
 def display_character_info(character):
      info_window = ctk.CTkToplevel()
@@ -979,6 +1060,9 @@ def open_character_journal(character):
 
 def save_character_to_json(character, filename):
     """Uloží charakter do JSON souboru."""
+    os.makedirs("characters(json)", exist_ok=True)  # Vytvoří složku 'characters', pokud neexistuje
+    filepath = os.path.join("characters", filename)  # Cesta k souboru ve složce 'characters'
+    
     character_data = {
         "name": character.name,
         "race": character.race.name if hasattr(character.race, "name") else str(character.race),
@@ -994,14 +1078,14 @@ def save_character_to_json(character, filename):
         "portrait": character.portrait,
         "path": character.path
     }
-    with open(filename, "w") as f:
+    with open(filepath, "w") as f:
         json.dump(character_data, f, indent=4)
-    print(f"✅ Postava {character.name} byla uložena do {filename}!")
+    print(f"✅ Postava {character.name} byla uložena do {filepath}!")
 
 def show_character_options(character):
     root = ctk.CTk()
     root.title(f"Možnosti pro {character.name}")
-    root.geometry("250x200")
+    root.geometry("250x500")
     # Tlačítko pro zobrazení deníku
     ctk.CTkButton(root, text="📜 Zobrazit informace", command=lambda: display_character_info(character)).pack(pady=10)
 
@@ -1012,11 +1096,12 @@ def show_character_options(character):
     
     ctk.CTkButton(root, text="💬Exportovat do JSON", command=lambda: (save_character_to_json(character, "my_character.json"))).pack(pady=10)
 
-    ctk.CTkButton(root, text="❌ Zavřít generator", command=root.destroy).pack(pady=10)
+    ctk.CTkButton(root, text="❌ Zavřít generator", command=sys.exit).pack(pady=10)
     root.mainloop()
 
-character = generate_character()
-show_character_options(character)
+if __name__ == "__main__":
+    show_main_menu()
+
 
 
 

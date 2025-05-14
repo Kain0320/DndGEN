@@ -13,6 +13,7 @@ class Character:
         self.inventory = generate_items(self.char_class.name)
         self.features = []  # Initialize features as an empty list
         self.spells = {"cantrips": [], "spells": []} 
+
     def set_skills(self):
         background_skills = self.background.skills if isinstance(self.background.skills, list) else [self.background.skills]
         class_skills = self.char_class.skills if isinstance(self.char_class.skills, list) else [self.char_class.skills]
